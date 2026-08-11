@@ -205,6 +205,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
     <button id="tab-thu" onclick="switchTab('thu')">Thu nhập</button>
     <button id="tab-dau" onclick="switchTab('dau')">Đầu tư</button>
     <button id="tab-no" onclick="switchTab('no')">Nợ &amp; vay</button>
+    <button id="tab-vay" onclick="switchTab('vay')">Cho vay</button>
     <button id="tab-kehoach" onclick="switchTab('kehoach')">Kế hoạch</button>
     <button id="tab-phantich" onclick="switchTab('phantich')">Phân tích</button>
     <button id="tab-danhmuc" onclick="switchTab('danhmuc')">Danh mục</button>
@@ -504,26 +505,49 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
       <div class="note" style="margin-top:12px"><strong>Số nợ gốc</strong> với khoản vay là số tiền vay ban đầu; với thẻ tín dụng là <strong>dư nợ hiện tại</strong> (để 0 nếu chưa nợ — dư nợ thẻ tự tăng khi bạn quẹt ở tab Chi tiêu). <strong>Kỳ hạn</strong> &amp; <strong>kiểu trả</strong> chỉ dùng để vẽ <strong>lịch trả dự kiến</strong>, không bắt buộc. Bấm ✎ ở một khoản để sửa lại thông tin.</div>
     </div>
 
+  </section>
+
+  <!-- ===== CHO VAY / PHẢI THU ===== -->
+  <section id="panel-vay" class="panel">
+    <div class="grid-stat" id="vayStat"></div>
+
     <div class="card" style="margin-top:18px">
-      <h2><span class="dot"></span>Cho vay <span class="muted" style="font-size:11px">(bạn là chủ nợ)</span></h2>
-      <div id="loanList" style="margin-bottom:16px"></div>
-      <details><summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--ink)">+ Thêm khoản cho vay</summary>
-      <div style="margin-top:14px">
+      <h2><span class="dot"></span>Ai đang nợ bạn</h2>
+      <div class="note" style="margin-bottom:12px">Gộp <strong>cho vay</strong> và <strong>share bill (chia tiền)</strong> theo từng người. Bấm <strong>✓ Ghi trả</strong> / <strong>✓ Đã trả</strong> để thu — app tự ghi vào sổ Thu đúng tài khoản bạn chọn. Tiền thu về là <strong>thu hồi vốn</strong>, không tính vào thu nhập.</div>
+      <div id="receivList"></div>
+    </div>
+
+    <div class="card" id="untrackedCard" style="display:none;background:#fbf3df;border-color:var(--gold-soft)">
+      <h2><span class="dot"></span>Cho vay chưa theo dõi</h2>
+      <div class="note" style="margin-bottom:10px">Các khoản <strong>Chi → Cho vay</strong> đã ghi ở tab Chi tiêu nhưng chưa gắn người vay. Bấm <strong>Theo dõi</strong> để chuyển thành khoản cho vay có theo dõi trả dần.</div>
+      <div id="untrackedList"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span><span id="loanFormTitle">Thêm khoản cho vay</span></h2>
       <div class="row" style="align-items:flex-end">
         <div style="flex:2;min-width:160px"><label>Tên khoản / mục đích</label><input id="lName" type="text" placeholder="vd Cho A vay mua xe"></div>
-        <div style="flex:2;min-width:140px"><label>Người vay <span style="color:#a23b2d">*</span></label><input id="lBorrower" type="text" placeholder="vd Anh A, Chị B"></div>
+        <div style="flex:2;min-width:140px"><label>Người vay <span style="color:#a23b2d">*</span></label><input id="lBorrower" type="text" list="lBorrowerList" placeholder="vd Anh A, Chị B"><datalist id="lBorrowerList"></datalist></div>
         <div style="flex:1;min-width:130px"><label>Số tiền cho vay</label><input id="lAmount" type="text" class="money" placeholder="vd 10tr"></div>
       </div>
       <div class="row" style="margin-top:10px;align-items:flex-end">
         <div style="flex:none;min-width:140px"><label>Ngày cho vay</label><input id="lDate" type="date"></div>
+        <div style="flex:none;min-width:140px"><label>Ngày hẹn trả <span class="muted" style="font-size:10px">(tùy chọn)</span></label><input id="lDue" type="date"></div>
         <div style="flex:none;min-width:120px"><label>Lãi suất (%/năm, nếu có)</label><input id="lRate" type="number" step="0.1" min="0" placeholder="0"></div>
-        <div style="flex:2;min-width:160px"><label>Tài khoản xuất tiền</label><select id="lAcct"></select></div>
         <div style="flex:2;min-width:160px"><label>Ghi chú</label><input id="lNote" type="text" placeholder="vd Trả dần 2tr/tháng"></div>
+      </div>
+      <div class="row" style="margin-top:10px;align-items:flex-end" id="lModeWrap">
+        <div style="flex:none"><label>Nguồn tiền</label>
+          <div style="display:flex;gap:16px;padding:9px 0;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="radio" name="lMode" value="now" checked style="width:auto" onchange="onLoanModeChange()"> Xuất tiền bây giờ</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="radio" name="lMode" value="past" style="width:auto" onchange="onLoanModeChange()"> Đã xuất từ trước / ngoài sổ</label>
+          </div>
+        </div>
+        <div style="flex:2;min-width:160px" id="lAcctWrap"><label>Tài khoản xuất tiền</label><select id="lAcct"></select></div>
         <button class="btn btn-primary" style="flex:none" id="lSaveBtn" onclick="saveLoan()">Thêm khoản cho vay</button>
       </div>
       <div id="loanHint" style="font-size:12px;color:var(--ink-soft);margin-top:6px"></div>
-      <div class="note" style="margin-top:8px">Khi thêm, app tự ghi khoản <strong>Chi — Cho vay</strong> vào sổ. Khi đối phương trả → bấm <strong>✓ Ghi trả</strong> để ghi vào sổ Thu.</div>
-      </div></details>
+      <div class="note" style="margin-top:8px"><strong>Xuất tiền bây giờ</strong>: app ghi 1 khoản tiền ra (không tính chi tiêu sinh hoạt), trừ đúng tài khoản. <strong>Đã xuất từ trước</strong>: chỉ ghi khoản phải thu, <strong>không</strong> tạo giao dịch — dùng cho khoản cho vay có trước khi dùng app.</div>
     </div>
   </section>
 
@@ -990,7 +1014,7 @@ function applyBundle(d){
   NWHIST=d.nwhist||[];
   MEMBERS=(d.members||[]).map(function(m){return {id:m.id||uid(),name:m.name||'',active:m.active!==false};});
   SPLITS=(d.splits||[]).map(function(s){return {id:s.id||uid(),txId:s.txId,desc:s.desc||'',total:s.total||0,date:s.date||'',shares:s.shares||[],settled:s.settled||[]};});
-  LOANS=(d.loans||[]).map(function(l){return {id:l.id||uid(),name:l.name||'',borrower:l.borrower||'',amount:l.amount||0,date:l.date||todayISO(),note:l.note||'',rate:l.rate||0,repayments:l.repayments||[],status:l.status||'active'};});
+  LOANS=(d.loans||[]).map(function(l){return {id:l.id||uid(),name:l.name||'',borrower:l.borrower||'',memberId:l.memberId||null,amount:l.amount||0,date:l.date||todayISO(),dueDate:l.dueDate||'',noCashOut:!!l.noCashOut,note:l.note||'',rate:l.rate||0,repayments:(l.repayments||[]).map(function(r){return {id:r.id||uid(),date:r.date,amount:r.amount||0,acct:r.acct||null};}),status:l.status||'active'};});
   if(!Array.isArray(NWHIST))NWHIST=[];
   NWHIST=NWHIST.filter(function(s){return s&&s.ym;});
   RECUR.forEach(function(r){
@@ -1029,6 +1053,34 @@ function applyBundle(d){
       if(!g){g={id:uid(),name:h.assetClass,kind:"dautu",assetClass:h.assetClass,color:GROUP_COLORS[h.assetClass]||"#8a8175",sys:false};CATEGORIES.push(g);}
       h.catId=g.id;}
   });
+  // ===== di trú CHO VAY (build25): gắn thành viên + tách loanout/loanback khỏi thống kê thu/chi =====
+  if(!(d.version>=11)){
+    var _resolveMemberByName=function(nm){
+      nm=(nm||'').trim();if(!nm)return null;
+      var f=MEMBERS.filter(function(x){return (x.name||'').trim().toLowerCase()===nm.toLowerCase();})[0];
+      if(!f){f={id:uid(),name:nm,active:true};MEMBERS.push(f);}
+      return f.id;
+    };
+    LOANS.forEach(function(l){if(!l.memberId)l.memberId=_resolveMemberByName(l.borrower||l.name);});
+    TX.forEach(function(t){
+      if(t.type==='chi'&&t.cat==='Cho vay'){
+        t.type='loanout';
+        if(!t.linkLoan){
+          var cand=LOANS.filter(function(l){return Math.abs((l.amount||0)-t.amount)<1;});
+          var byName=cand.filter(function(l){return t.desc&&l.borrower&&t.desc.toLowerCase().indexOf(l.borrower.toLowerCase())>=0;});
+          var pick=byName[0]||cand[0];
+          if(pick)t.linkLoan=pick.id;
+        }
+      }else if(t.type==='thu'&&/ trả nợ — /.test(t.desc||'')){
+        t.type='loanback';t.cat='Thu hồi cho vay';
+        if(!t.linkLoan){
+          var lp=LOANS.filter(function(l){return t.desc&&l.borrower&&t.desc.toLowerCase().indexOf(l.borrower.toLowerCase())===0;})[0]
+                ||LOANS.filter(function(l){return t.desc&&l.borrower&&t.desc.toLowerCase().indexOf(l.borrower.toLowerCase())>=0;})[0];
+          if(lp)t.linkLoan=lp.id;
+        }
+      }
+    });
+  }
   refreshCatColors();
 }
 
@@ -1054,7 +1106,7 @@ function grpInput(el){
 }
 
 /* ---------- LƯU (thô hoặc mã hóa) ---------- */
-function currentBundle(){return {version:10,exportedAt:new Date().toISOString(),tx:TX,budget:BUDGETS,hold:HOLD,proj:PROJ,accounts:ACCOUNTS,goals:GOALS,cats:CATEGORIES,profile:PROFILE,debts:DEBTS,recur:RECUR,nwhist:NWHIST,members:MEMBERS,splits:SPLITS,loans:LOANS};}
+function currentBundle(){return {version:11,exportedAt:new Date().toISOString(),tx:TX,budget:BUDGETS,hold:HOLD,proj:PROJ,accounts:ACCOUNTS,goals:GOALS,cats:CATEGORIES,profile:PROFILE,debts:DEBTS,recur:RECUR,nwhist:NWHIST,members:MEMBERS,splits:SPLITS,loans:LOANS};}
 function persist(){
   if(CRYPTO_DEK&&CRYPTO_SEC){ // mã hóa nền, không chặn UI
     encryptData(currentBundle()).then(function(dp){CRYPTO_SEC.data=dp;LS.set('pf_secure',CRYPTO_SEC);}).catch(function(e){console.error(e);});
@@ -1191,7 +1243,7 @@ function drawDonut(svgId,legendId,data,total,colors){
 /* ---------- TÀI KHOẢN ---------- */
 function acctName(id){for(var i=0;i<ACCOUNTS.length;i++)if(ACCOUNTS[i].id===id)return ACCOUNTS[i].name;return "?";}
 function txAcctName(t){if(t.card)return "Thẻ: "+debtName(t.card);return acctName(t.acct||"");}
-function acctBalance(id){var a=null;for(var i=0;i<ACCOUNTS.length;i++)if(ACCOUNTS[i].id===id)a=ACCOUNTS[i];var bal=a?(a.opening||0):0;TX.forEach(function(t){if(t.acct!==id)return;if(t.type==="thu"||t.type==="fundout"||t.type==="loanin")bal+=t.amount;else bal-=t.amount;});return bal;}
+function acctBalance(id){var a=null;for(var i=0;i<ACCOUNTS.length;i++)if(ACCOUNTS[i].id===id)a=ACCOUNTS[i];var bal=a?(a.opening||0):0;TX.forEach(function(t){if(t.acct!==id)return;if(t.type==="thu"||t.type==="fundout"||t.type==="loanin"||t.type==="loanback")bal+=t.amount;else bal-=t.amount;});return bal;}
 function totalCash(){var s=0;ACCOUNTS.forEach(function(a){s+=acctBalance(a.id);});return s;}
 function acctOptions(sel,withNone,withCards){
   var o=withNone?'<option value="">— Không trừ tài khoản —</option>':'';
@@ -1583,18 +1635,22 @@ function renderTx(mk,type,wrapId){
   var md=monthData(mk);
   var main=md.filter(function(t){return t.type===type;});
   var extra=[];
-  if(type==="chi")extra=md.filter(function(t){return t.type==="debtpay";}); // trả gốc nợ = dòng tiền ra
-  else if(type==="thu")extra=md.filter(function(t){return t.type==="loanin";}); // nhận tiền vay = dòng tiền vào
+  if(type==="chi")extra=md.filter(function(t){return t.type==="debtpay"||t.type==="loanout";}); // trả gốc nợ / cho vay ra = dòng tiền ra
+  else if(type==="thu")extra=md.filter(function(t){return t.type==="loanin"||t.type==="loanback";}); // nhận tiền vay / thu hồi cho vay = dòng tiền vào
   var d=main.concat(extra).sort(function(a,b){return a.date<b.date?1:-1;});
   var wrap=document.getElementById(wrapId);
   if(!d.length){wrap.innerHTML='<div class="empty">Chưa có khoản '+(type==="thu"?"thu":"chi")+' trong tháng này.</div>';return;}
   var rows=d.map(function(t){
-    var isTransfer=(t.type==="debtpay"||t.type==="loanin");
+    var isTransfer=(t.type==="debtpay"||t.type==="loanin"||t.type==="loanout"||t.type==="loanback");
     var dateCell='<input type="date" class="editcat" style="width:128px" value="'+t.date+'" onchange="changeDate(\''+t.id+'\',this.value)">';
     var groupCell;
     if(isTransfer){
-      var lbl=(t.type==="debtpay"?"↪ Trả nợ":"↩ Tiền vay")+(t.linkDebt?(": "+debtName(t.linkDebt)):"");
-      groupCell='<span style="font-size:12px;font-style:italic;color:var(--ink-soft)">'+lbl+' <span style="opacity:.7">(không tính '+(t.type==="debtpay"?"chi tiêu":"thu nhập")+')</span></span>';
+      var lbl,notk;
+      if(t.type==="debtpay"){lbl="↪ Trả nợ"+(t.linkDebt?(": "+debtName(t.linkDebt)):"");notk="chi tiêu";}
+      else if(t.type==="loanin"){lbl="↩ Tiền vay"+(t.linkDebt?(": "+debtName(t.linkDebt)):"");notk="thu nhập";}
+      else if(t.type==="loanout"){lbl="↪ Cho vay"+(t.linkLoan?(": "+loanDispName(t.linkLoan)):"");notk="chi tiêu";}
+      else {lbl="↩ Thu hồi cho vay"+(t.linkLoan?(": "+loanDispName(t.linkLoan)):"");notk="thu nhập";}
+      groupCell='<span style="font-size:12px;font-style:italic;color:var(--ink-soft)">'+lbl+' <span style="opacity:.7">(không tính '+notk+')</span></span>';
     }else{
       groupCell='<select class="editcat" onchange="changeCatType(\''+t.id+'\',this.value)">'+catOptions(t.cat)+'</select>';
     }
@@ -1605,7 +1661,7 @@ function renderTx(mk,type,wrapId){
       var hasSplit=SPLITS.some(function(s){return s.txId===t.id;});
       splitBtn='<button class="btn btn-ghost" style="font-size:11px;padding:3px 8px;'+(hasSplit?'color:#3f7a4f;font-weight:600':'')+'" onclick="openSplitDialog(\''+t.id+'\')" title="Chia tiền">'+(hasSplit?'✂ Đã chia':'✂')+'</button> ';
     }
-    var inflow=(t.type==="thu"||t.type==="loanin");
+    var inflow=(t.type==="thu"||t.type==="loanin"||t.type==="loanback");
     return '<tr'+(isTransfer?' style="background:rgba(120,90,40,.05)"':'')+'><td>'+dateCell+'</td><td>'+t.desc+'</td><td>'+groupCell+'</td><td>'+acctCell+'</td><td class="right num '+(inflow?"up":"")+'">'+(inflow?"+":"−")+fmt(t.amount).replace(" ₫","")+'</td><td class="right">'+splitBtn+'<button class="del" onclick="delTx(\''+t.id+'\')">Xóa</button></td></tr>';
   }).join("");
   wrap.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Ngày</th><th>Mô tả</th><th>Nhóm</th><th>Tài khoản</th><th class="right">Số tiền</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
@@ -1635,7 +1691,7 @@ function renderBooks(){fillMonthPicks();renderExpense();renderIncome();}
 function exportCSV(){
   var mk=CUR_MONTH;var d=monthData(mk).slice().sort(function(a,b){return a.date<b.date?-1:1;});
   var rows=[["Ngày","Mô tả","Nhóm","Loại","Tài khoản","Số tiền (VND)"]];
-  d.forEach(function(t){rows.push([t.date,t.desc,t.cat,(t.type==="thu"?"Thu":t.type==="invest"?"Đầu tư":t.type==="fund"?"Nạp quỹ":t.type==="fundout"?"Rút quỹ":"Chi"),txAcctName(t),t.amount]);});
+  d.forEach(function(t){rows.push([t.date,t.desc,t.cat,(t.type==="thu"?"Thu":t.type==="loanback"?"Thu hồi cho vay":t.type==="loanin"?"Nhận tiền vay":t.type==="loanout"?"Cho vay":t.type==="debtpay"?"Trả nợ (gốc)":t.type==="invest"?"Đầu tư":t.type==="fund"?"Nạp quỹ":t.type==="fundout"?"Rút quỹ":"Chi"),txAcctName(t),t.amount]);});
   var thu=sumType(mk,"thu"),chi=sumType(mk,"chi"),inv=sumType(mk,"invest");
   rows.push([]);rows.push(["","","","","Tổng thu",thu]);rows.push(["","","","","Chi tiêu",chi]);rows.push(["","","","","Rót đầu tư",inv]);rows.push(["","","","","Dòng tiền ròng",thu-chi-inv]);
   var csv=rows.map(function(r){return r.map(function(c){var s=String(c==null?"":c);return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");}).join("\n");
@@ -1861,7 +1917,7 @@ function totalDebt(){var s=0;DEBTS.forEach(function(d){s+=debtOutstanding(d);});
 function totalAssets(){var g=groupTotals();var s=0;for(var k in g)s+=g[k];return s;}
 function netWorth(){return totalAssets()-totalDebt();}
 // 1 giao dịch có phải chi tiêu sinh hoạt thật không (loại nạp quỹ — là chuyển dịch số dư)
-function isLivingExpense(t){return t.type==="chi"&&!t.linkFund;}
+function isLivingExpense(t){return t.type==="chi"&&!t.linkFund&&t.cat!=="Cho vay";}
 // tổng chi tiêu thật trong 1 tháng
 function spendingSum(mk){var s=0;monthData(mk).forEach(function(t){if(isLivingExpense(t))s+=t.amount;});return s;}
 function prevSpending(mk){var ms=months().slice().sort();var idx=ms.indexOf(mk);if(idx<=0)return null;return spendingSum(ms[idx-1]);}
@@ -2153,19 +2209,16 @@ function renderDebts(){
 function renderDebtTab(){
   var st=document.getElementById('noStat');
   if(st){
-    var loanAmt=totalLoaned();
-    if(DEBTS.length||LOANS.length){
+    if(DEBTS.length){
       st.innerHTML=
-        (DEBTS.length?('<div class="stat"><div class="k">Tổng nợ</div><div class="v num down">'+fmt(totalDebt())+'</div><div class="d muted" style="font-size:11px">còn phải trả</div></div>'):'') +
+        '<div class="stat"><div class="k">Tổng nợ</div><div class="v num down">'+fmt(totalDebt())+'</div><div class="d muted" style="font-size:11px">còn phải trả</div></div>'+
         '<div class="stat" style="background:#fbf3df;border-color:var(--gold-soft)"><div class="k">Tài sản ròng</div><div class="v num '+(netWorth()<0?"down":"")+'">'+fmt(netWorth())+'</div><div class="d muted" style="font-size:11px">tài sản − nợ</div></div>'+
-        (DEBTS.length?('<div class="stat"><div class="k">Số khoản nợ</div><div class="v num">'+DEBTS.length+'</div></div>'):'') +
-        (loanAmt>0?('<div class="stat" style="background:#e6f0e8;border-color:#9dc4a4"><div class="k">Cho vay (chưa thu)</div><div class="v num up">'+fmt(loanAmt)+'</div><div class="d muted" style="font-size:11px">người khác đang nợ bạn</div></div>'):'');
+        '<div class="stat"><div class="k">Số khoản nợ</div><div class="v num">'+DEBTS.length+'</div></div>';
     } else st.innerHTML='';
   }
   var w=document.getElementById('noList');if(!w)return;
   if(!DEBTS.length){w.innerHTML='<div class="empty">Chưa có khoản nợ nào. Dùng form bên dưới để thêm khoản vay hoặc thẻ tín dụng.</div>';}
   else{w.innerHTML=DEBTS.map(function(d){return debtCardHTML(d,true);}).join("");}
-  renderLoanSection();
 }
 function renderDebtPayments(did){
   var pays=TX.filter(function(t){return t.linkDebt===did&&(t.type==="debtpay"||(t.type==="chi"&&t.cat==="Lãi vay"));}).sort(function(a,b){return a.date<b.date?1:-1;});
@@ -2723,7 +2776,7 @@ function renderRecurDue(){
 }
 
 /* ====================== DỰ BÁO DÒNG TIỀN (A1) ====================== */
-function txCashSign(t){return (t.type==="thu"||t.type==="fundout"||t.type==="loanin")?1:-1;}
+function txCashSign(t){return (t.type==="thu"||t.type==="fundout"||t.type==="loanin"||t.type==="loanback")?1:-1;}
 // Tiền mặt tính tới hết ngày iso (chỉ giao dịch ngày <= iso)
 function cashAsOf(iso){
   var s=0;ACCOUNTS.forEach(function(a){s+=a.opening||0;});
@@ -2749,6 +2802,12 @@ function forecastEvents(days){
       else{delta=(r.type==='thu'?1:-1)*(r.amount||0);}
       if(delta!==0)evs.push({date:d,name:r.name,delta:delta,kind:'recur'});
     });
+  });
+  // (c) ngày hẹn trả các khoản cho vay → dòng tiền vào dự kiến
+  LOANS.forEach(function(l){
+    if(l.status!=='active')return;var rem=loanRemain(l);if(rem<=0)return;
+    if(!l.dueDate||l.dueDate<=today||l.dueDate>endIso)return;
+    evs.push({date:l.dueDate,name:'Hẹn thu: '+loanWho(l)+(l.name&&l.name!==loanWho(l)?(' — '+l.name):''),delta:rem,kind:'loan'});
   });
   evs.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
   return evs;
@@ -2790,7 +2849,7 @@ function renderCashForecast(){
     tbl='<div style="margin-top:14px;overflow-x:auto"><table style="font-size:12px"><thead><tr><th>Ngày</th><th>Khoản</th><th class="right">Dòng tiền</th><th class="right">Số dư dự kiến</th></tr></thead><tbody>'+
       f.events.map(function(e){
         var below=e.running<floor;
-        return '<tr><td>'+e.date.split("-").reverse().join("/")+'</td><td>'+(e.kind==='recur'?'🔁 ':'')+e.name+'</td>'+
+        return '<tr><td>'+e.date.split("-").reverse().join("/")+'</td><td>'+(e.kind==='recur'?'🔁 ':(e.kind==='loan'?'💰 ':''))+e.name+'</td>'+
           '<td class="right num '+(e.delta>=0?'up':'down')+'">'+dnum(e.delta)+'</td>'+
           '<td class="right num '+(below?'down':'')+'">'+fmt(e.running)+(below?' ⚠️':'')+'</td></tr>';
       }).join("")+'</tbody></table></div>';
@@ -3131,7 +3190,7 @@ function exportMonthExcel(mk){
   // ---- Sheet 1: Giao dịch ----
   var txRows=[['Ngày','Mô tả','Nhóm','Loại','Số tiền (₫)','Tài khoản','Ghi chú']];
   monthData(mk).forEach(function(t){
-    var loai=t.type==='thu'?'Thu nhập':(t.type==='debtpay'?'Trả nợ (gốc)':'Chi tiêu');
+    var loai=t.type==='thu'?'Thu nhập':t.type==='loanback'?'Thu hồi cho vay':t.type==='loanout'?'Cho vay':t.type==='loanin'?'Nhận tiền vay':t.type==='debtpay'?'Trả nợ (gốc)':'Chi tiêu';
     txRows.push([t.date,t.desc||'',t.cat||'',loai,t.amount,txAcctName(t),t.note||'']);
   });
   // sắp xếp theo ngày
@@ -3352,101 +3411,222 @@ function deleteMember(id){
   MEMBERS=MEMBERS.filter(function(m){return m.id!==id;});persist();renderMembers();renderSplitDebt();
 }
 
-/* ====================== CHO VAY (bạn là chủ nợ) ====================== */
+/* ====================== CHO VAY / PHẢI THU (bạn là chủ nợ) ====================== */
 function loanById(id){return LOANS.find(function(l){return l.id===id;})||null;}
-function loanPaid(l){return l.repayments.reduce(function(s,r){return s+r.amount;},0);}
-function loanRemain(l){return Math.max(0,l.amount-loanPaid(l));}
+function loanPaid(l){return (l.repayments||[]).reduce(function(s,r){return s+(r.amount||0);},0);}
+function loanRemain(l){return Math.max(0,(l.amount||0)-loanPaid(l));}
 function totalLoaned(){return LOANS.filter(function(l){return l.status==='active';}).reduce(function(s,l){return s+loanRemain(l);},0);}
+function loanMember(l){return l&&l.memberId?memberById(l.memberId):null;}
+function loanWho(l){var m=loanMember(l);return (m?m.name:(l.borrower||l.name))||'?';}
+function loanDispName(loanId){var l=loanById(loanId);if(!l)return '?';var who=loanWho(l);return who+((l.name&&l.name!==who)?(' — '+l.name):'');}
+function loanOverdue(l){return l.status==='active'&&!!l.dueDate&&loanRemain(l)>0&&l.dueDate<todayISO();}
+// tìm member sẵn có theo tên (không phân biệt hoa/thường), không có thì tạo mới
+function ensureMember(nm){nm=(nm||'').trim();if(!nm)return null;var f=MEMBERS.filter(function(x){return (x.name||'').trim().toLowerCase()===nm.toLowerCase();})[0];if(!f){f={id:uid(),name:nm,active:true};MEMBERS.push(f);}return f.id;}
+// gợi ý datalist tên người đã có
+function fillLoanBorrowerList(){var dl=document.getElementById('lBorrowerList');if(!dl)return;dl.innerHTML=MEMBERS.map(function(m){return '<option value="'+m.name+'">';}).join('');}
 
+function onLoanModeChange(){var m=document.querySelector('input[name="lMode"]:checked');var past=m&&m.value==='past';var w=document.getElementById('lAcctWrap');if(w)w.style.opacity=past?'.4':'1',w.style.pointerEvents=past?'none':'';}
 var LOAN_EDIT=null;
 function saveLoan(){
-  var hint=document.getElementById('loanHint');hint.textContent='';
+  var hint=document.getElementById('loanHint');if(hint)hint.textContent='';
   var name=document.getElementById('lName').value.trim();
   var borrower=document.getElementById('lBorrower').value.trim();
   var amount=parseAmount(document.getElementById('lAmount').value)||0;
   var date=document.getElementById('lDate').value||todayISO();
+  var due=document.getElementById('lDue').value||'';
   var rate=parseFloat(document.getElementById('lRate').value)||0;
   var note=document.getElementById('lNote').value.trim();
-  if(!borrower){hint.textContent='Nhập tên người vay.';return;}
-  if(amount<=0){hint.textContent='Nhập số tiền cho vay.';return;}
+  if(!borrower){if(hint)hint.textContent='Nhập tên người vay.';return;}
+  if(amount<=0){if(hint)hint.textContent='Nhập số tiền cho vay.';return;}
   if(LOAN_EDIT){
     var l=loanById(LOAN_EDIT);
-    if(l){l.name=name||borrower;l.borrower=borrower;l.amount=amount;l.date=date;l.rate=rate;l.note=note;}
+    if(l){l.name=name||borrower;l.borrower=borrower;l.memberId=ensureMember(borrower);l.amount=amount;l.date=date;l.dueDate=due;l.rate=rate;l.note=note;}
     LOAN_EDIT=null;document.getElementById('lSaveBtn').textContent='Thêm khoản cho vay';
+    var mw=document.getElementById('lModeWrap');if(mw)mw.style.display='';
   }else{
-    // Tự tạo giao dịch chi "Cho vay — [tên]"
-    var acct=document.getElementById('lAcct').value||DEF_ACCT;
-    TX.push({id:uid(),date:date,desc:(name||borrower)+' — cho vay',amount:amount,cat:'Cho vay',type:'chi',acct:acct});
-    LOANS.push({id:uid(),name:name||borrower,borrower:borrower,amount:amount,date:date,note:note,rate:rate,repayments:[],status:'active'});
+    var modeEl=document.querySelector('input[name="lMode"]:checked');var mode=modeEl?modeEl.value:'now';
+    var memberId=ensureMember(borrower);var loanId=uid();var noCash=(mode==='past');
+    if(!noCash){
+      var acct=document.getElementById('lAcct').value||DEF_ACCT;
+      TX.push({id:uid(),date:date,desc:(name||borrower)+' — cho vay',amount:amount,cat:'Cho vay',type:'loanout',acct:acct,linkLoan:loanId});
+    }
+    LOANS.push({id:loanId,name:name||borrower,borrower:borrower,memberId:memberId,amount:amount,date:date,dueDate:due,noCashOut:noCash,note:note,rate:rate,repayments:[],status:'active'});
   }
   persist();
-  ['lName','lBorrower','lAmount','lRate','lNote'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
-  hint.innerHTML='Đã lưu khoản cho vay <strong>'+(name||borrower)+'</strong>.';
-  renderDebtTab();renderBooks();renderOverview();
+  ['lName','lBorrower','lAmount','lRate','lNote','lDue'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  if(hint)hint.innerHTML='Đã lưu khoản cho vay <strong>'+(name||borrower)+'</strong>.';
+  renderReceivables();renderBooks();renderOverview();
 }
 function editLoan(id){
   var l=loanById(id);if(!l)return;LOAN_EDIT=id;
-  document.getElementById('lName').value=l.name;
-  document.getElementById('lBorrower').value=l.borrower;
-  document.getElementById('lAmount').value=l.amount;
-  document.getElementById('lDate').value=l.date;
+  document.getElementById('lName').value=l.name||'';
+  document.getElementById('lBorrower').value=loanWho(l);
+  document.getElementById('lAmount').value=l.amount||'';
+  document.getElementById('lDate').value=l.date||'';
+  document.getElementById('lDue').value=l.dueDate||'';
   document.getElementById('lRate').value=l.rate||'';
   document.getElementById('lNote').value=l.note||'';
   document.getElementById('lSaveBtn').textContent='Cập nhật';
+  var mw=document.getElementById('lModeWrap');if(mw)mw.style.display='none';// sửa không đổi dòng tiền đã ghi
   document.getElementById('lName').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function deleteLoan(id){
   var l=loanById(id);if(!l)return;
-  if(!confirm('Xoá khoản cho vay "'+l.name+'"? (các giao dịch liên quan vẫn giữ)'))return;
-  LOANS=LOANS.filter(function(x){return x.id!==id;});persist();renderDebtTab();renderOverview();
-}
-function addRepayment(loanId){
-  var l=loanById(loanId);if(!l)return;
-  var remain=loanRemain(l);
-  var amtStr=prompt('Số tiền '+(l.borrower||l.name)+' vừa trả (còn lại: '+fmt(remain)+'):',remain);
-  if(!amtStr)return;
-  var amt=parseAmount(amtStr)||0;
-  if(amt<=0){alert('Số tiền không hợp lệ.');return;}
-  if(amt>remain+1){if(!confirm('Số tiền ('+fmt(amt)+') lớn hơn dư nợ còn lại ('+fmt(remain)+'). Vẫn ghi?'))return;}
-  var date=prompt('Ngày nhận tiền (YYYY-MM-DD):',todayISO());
-  if(!date)return;
-  // Tạo giao dịch thu
-  TX.push({id:uid(),date:date,desc:l.borrower+' trả nợ — '+(l.name||'cho vay'),amount:Math.min(amt,remain),cat:'Thu khác',type:'thu',acct:DEF_ACCT});
-  l.repayments.push({id:uid(),date:date,amount:amt});
-  if(loanRemain(l)<=0)l.status='done';
-  persist();renderDebtTab();renderBooks();renderOverview();
-}
-function renderLoanSection(){
-  var wrap=document.getElementById('loanList');if(!wrap)return;
-  var active=LOANS.filter(function(l){return l.status==='active';});
-  var done=LOANS.filter(function(l){return l.status==='done';});
-  if(!LOANS.length){wrap.innerHTML='<div class="muted" style="font-size:13px">Chưa có khoản cho vay nào.</div>';return;}
-  function row(l){
-    var paid=loanPaid(l),remain=loanRemain(l),pct=l.amount>0?paid/l.amount*100:100;
-    var reps=l.repayments.map(function(r){return '<div style="font-size:11px;color:var(--ink-soft)">'+r.date.split('-').reverse().join('/')+'  +'+fmt(r.amount)+'</div>';}).join('');
-    return '<div class="goal" style="margin-bottom:14px;'+(l.status==='done'?'opacity:.6':'')+'">'+
-      '<div class="gh"><span>'+(l.status==='done'?'✅ ':'💰 ')+'<strong>'+(l.name||l.borrower)+'</strong>'+
-        (l.borrower&&l.name!==l.borrower?' <span class="muted" style="font-size:12px">· '+l.borrower+'</span>':'')+'</span>'+
-        '<span style="display:flex;gap:6px;align-items:center">'+
-          (l.status==='active'?('<button class="btn btn-primary" style="font-size:12px;padding:4px 10px" onclick="addRepayment(\''+l.id+'\')">✓ Ghi trả</button>'):'')+ 
-          '<button class="del" style="font-size:12px" onclick="editLoan(\''+l.id+'\')">✎</button>'+
-          '<button class="del" style="font-size:12px" onclick="deleteLoan(\''+l.id+'\')">✕</button>'+
-        '</span></div>'+
-      '<div style="font-size:12px;color:var(--ink-soft);margin:4px 0">'+l.date.split('-').reverse().join('/')+' · '+fmt(l.amount)+
-        (l.rate?' · '+l.rate+'%/năm':'')+
-        (l.note?' · "'+l.note+'"':'')+'</div>'+
-      '<div style="margin:8px 0 4px;background:#eee5d2;border-radius:4px;height:8px"><div style="height:8px;width:'+Math.min(pct,100)+'%;background:var(--green);border-radius:4px"></div></div>'+
-      '<div style="font-size:12px;display:flex;justify-content:space-between">'+
-        '<span class="up">Đã thu: '+fmt(paid)+'</span>'+
-        (remain>0?('<span class="down">Còn lại: '+fmt(remain)+'</span>'):'<span class="up">Tất toán ✓</span>')+
-      '</div>'+reps+'</div>';
+  if(!confirm('Xoá khoản cho vay "'+(l.name||loanWho(l))+'"?'))return;
+  var linked=TX.filter(function(t){return t.linkLoan===id;});
+  if(linked.length){
+    if(confirm('Xoá luôn '+linked.length+' giao dịch liên quan (cho vay ra / thu hồi) trong sổ?\n\nOK = xoá cả giao dịch · Huỷ = giữ giao dịch, chỉ bỏ theo dõi.')){
+      TX=TX.filter(function(t){return t.linkLoan!==id;});
+    }
   }
-  var html='';
-  if(active.length)html+=active.map(row).join('');
-  if(done.length)html+='<details style="margin-top:12px"><summary class="muted" style="cursor:pointer;font-size:12px">'+done.length+' khoản đã tất toán</summary><div style="margin-top:8px">'+done.map(row).join('')+'</div></details>';
-  wrap.innerHTML=html;
+  LOANS=LOANS.filter(function(x){return x.id!==id;});
+  persist();renderReceivables();renderBooks();renderOverview();
 }
-
+// ---- Ghi trả (có chọn tài khoản nhận) ----
+function addRepayment(loanId){
+  var l=loanById(loanId);if(!l)return;var remain=loanRemain(l);
+  if(remain<=0){alert('Khoản này đã tất toán.');return;}
+  var opts=ACCOUNTS.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join('');
+  var who=loanWho(l);
+  var html='<div id="repayModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center">'+
+    '<div style="background:var(--card);border-radius:16px;padding:24px;min-width:320px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">'+
+    '<h2 style="margin:0 0 4px">Ghi '+who+' trả</h2>'+
+    '<div class="muted" style="font-size:12px;margin-bottom:14px">'+(l.name||'cho vay')+' · còn lại '+fmt(remain)+'</div>'+
+    '<label>Số tiền nhận</label><input type="text" class="money" id="repAmt" value="'+remain+'" oninput="formatMoneyInput(this)">'+
+    '<div class="row" style="margin-top:10px">'+
+      '<div style="flex:1;min-width:150px"><label>Tài khoản nhận</label><select id="repAcct">'+opts+'</select></div>'+
+      '<div style="flex:none;min-width:140px"><label>Ngày nhận</label><input type="date" id="repDate" value="'+todayISO()+'"></div>'+
+    '</div>'+
+    '<div class="row" style="gap:8px;margin-top:16px">'+
+      '<button class="btn btn-primary" onclick="confirmRepayment(\''+loanId+'\')">Ghi vào sổ Thu</button>'+
+      '<button class="btn btn-ghost" onclick="closeRepayModal()">Huỷ</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:10px">Ghi ở đây sẽ tự tạo 1 khoản <strong>Thu hồi cho vay</strong> vào đúng tài khoản chọn. Không tính vào thu nhập (chỉ là thu hồi vốn).</div>'+
+    '</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);bindMoneyInputs();
+}
+function closeRepayModal(){var m=document.getElementById('repayModal');if(m)m.remove();}
+function confirmRepayment(loanId){
+  var l=loanById(loanId);if(!l){closeRepayModal();return;}
+  var remain=loanRemain(l);
+  var amt=parseAmount(document.getElementById('repAmt').value)||0;
+  var acct=document.getElementById('repAcct').value||DEF_ACCT;
+  var date=document.getElementById('repDate').value||todayISO();
+  if(amt<=0){alert('Số tiền không hợp lệ.');return;}
+  if(amt>remain+1&&!confirm('Số tiền ('+fmt(amt)+') lớn hơn dư nợ còn lại ('+fmt(remain)+'). Vẫn ghi?'))return;
+  var rec=Math.min(amt,remain);var who=loanWho(l);
+  TX.push({id:uid(),date:date,desc:who+' trả — '+(l.name||'cho vay'),amount:rec,cat:'Thu hồi cho vay',type:'loanback',acct:acct,linkLoan:loanId});
+  l.repayments.push({id:uid(),date:date,amount:rec,acct:acct});
+  if(loanRemain(l)<=0)l.status='done';
+  persist();closeRepayModal();renderReceivables();renderBooks();renderOverview();
+}
+// ---- Cho vay "chưa theo dõi": giao dịch cho vay ra chưa gắn khoản nào ----
+function untrackedLoanTx(){return TX.filter(function(t){return (t.type==='loanout'||(t.type==='chi'&&t.cat==='Cho vay'))&&!t.linkLoan;});}
+function trackLoanTx(txId){
+  var t=TX.find(function(x){return x.id===txId;});if(!t)return;
+  var who=prompt('Người vay của khoản "'+(t.desc||'Cho vay')+'" ('+fmt(t.amount)+'):','');
+  if(who===null)return;who=who.trim();if(!who){alert('Cần tên người vay để theo dõi.');return;}
+  var loanId=uid();var mid=ensureMember(who);
+  t.type='loanout';t.cat='Cho vay';t.linkLoan=loanId;
+  LOANS.push({id:loanId,name:t.desc||('Cho vay '+who),borrower:who,memberId:mid,amount:t.amount,date:t.date,dueDate:'',noCashOut:false,note:'(gắn từ giao dịch đã ghi)',rate:0,repayments:[],status:'active'});
+  persist();renderReceivables();renderBooks();renderOverview();
+}
+// ---- Gộp phải thu theo từng người (cho vay + share bill) ----
+function receivablesData(){
+  var people={},order=[];
+  function bucket(key,name){if(!people[key]){people[key]={key:key,name:name,loans:[],splits:[],loanRemain:0,splitRemain:0,overdue:false};order.push(key);}return people[key];}
+  LOANS.filter(function(l){return l.status==='active'&&loanRemain(l)>0;}).forEach(function(l){
+    var m=loanMember(l);var key=l.memberId||('nm:'+((l.borrower||l.name||'?').toLowerCase()));var name=m?m.name:(l.borrower||l.name||'?');
+    var b=bucket(key,name);b.loans.push(l);b.loanRemain+=loanRemain(l);if(loanOverdue(l))b.overdue=true;
+  });
+  SPLITS.forEach(function(s){
+    s.shares.forEach(function(sh){
+      if(sh.memberId==='__me__')return;if(s.settled.indexOf(sh.memberId)>=0)return;if(!(sh.amount>0))return;
+      var m=memberById(sh.memberId);var b=bucket(sh.memberId,m?m.name:sh.memberId);
+      b.splits.push({split:s,share:sh});b.splitRemain+=sh.amount;
+    });
+  });
+  var arr=order.map(function(k){return people[k];});
+  arr.forEach(function(p){p.total=p.loanRemain+p.splitRemain;});
+  arr.sort(function(a,b){return b.total-a.total;});
+  return arr;
+}
+function renderReceivables(){
+  fillLoanBorrowerList();
+  var data=receivablesData();
+  var loanTot=data.reduce(function(s,p){return s+p.loanRemain;},0);
+  var splitTot=data.reduce(function(s,p){return s+p.splitRemain;},0);
+  var overCount=LOANS.filter(loanOverdue).length;
+  var overSum=LOANS.filter(loanOverdue).reduce(function(s,l){return s+loanRemain(l);},0);
+  // --- Thống kê ---
+  var st=document.getElementById('vayStat');
+  if(st){
+    st.innerHTML=
+      '<div class="stat" style="background:#e6f0e8;border-color:#9dc4a4"><div class="k">Tổng phải thu</div><div class="v num up">'+fmt(loanTot+splitTot)+'</div><div class="d muted" style="font-size:11px">người khác đang nợ bạn</div></div>'+
+      '<div class="stat"><div class="k">Đang cho vay</div><div class="v num">'+fmt(loanTot)+'</div><div class="d muted" style="font-size:11px">'+data.filter(function(p){return p.loanRemain>0;}).length+' người</div></div>'+
+      '<div class="stat"><div class="k">Share bill chưa trả</div><div class="v num">'+fmt(splitTot)+'</div><div class="d muted" style="font-size:11px">'+data.filter(function(p){return p.splitRemain>0;}).length+' người</div></div>'+
+      (overCount>0?('<div class="stat" style="background:#fbe9e6;border-color:#e0a89f"><div class="k">Quá hạn</div><div class="v num down">'+fmt(overSum)+'</div><div class="d muted" style="font-size:11px">'+overCount+' khoản đã qua ngày hẹn</div></div>'):'');
+  }
+  // --- Danh sách theo người ---
+  var wrap=document.getElementById('receivList');
+  if(wrap){
+    if(!data.length){wrap.innerHTML='<div class="muted" style="font-size:13px">Chưa có ai đang nợ bạn. Thêm khoản cho vay bên dưới, hoặc chia tiền hoá đơn ở tab Chi tiêu.</div>';}
+    else{
+      wrap.innerHTML=data.map(function(p){
+        var loanRows=p.loans.map(function(l){
+          var rem=loanRemain(l),paid=loanPaid(l),pct=l.amount>0?paid/l.amount*100:100;
+          var over=loanOverdue(l);
+          var due=l.dueDate?('<span class="pill" style="'+(over?'background:#fbe9e6;color:#a23b2d;border-color:#e0a89f':'')+'">'+(over?'quá hạn ':'hẹn ')+l.dueDate.split('-').reverse().join('/')+'</span>'):'';
+          var reps=(l.repayments||[]).map(function(r){return '<span style="font-size:11px;color:var(--ink-soft)">'+r.date.split('-').reverse().join('/')+' +'+fmtShort(r.amount)+'</span>';}).join(' · ');
+          return '<div style="padding:8px 0;border-top:1px solid #f0e9d8">'+
+            '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">'+
+              '<span>💰 <strong>'+(l.name||'Cho vay')+'</strong> '+due+(l.noCashOut?' <span class="pill">ngoài sổ</span>':'')+(l.rate?(' <span class="muted" style="font-size:11px">'+l.rate+'%/năm</span>'):'')+'</span>'+
+              '<span style="display:flex;gap:6px;align-items:center">'+
+                '<span class="down num" style="font-size:13px">còn '+fmt(rem)+'</span>'+
+                '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="addRepayment(\''+l.id+'\')">✓ Ghi trả</button>'+
+                '<button class="del" style="font-size:12px" onclick="editLoan(\''+l.id+'\')">✎</button>'+
+                '<button class="del" style="font-size:12px" onclick="deleteLoan(\''+l.id+'\')">✕</button>'+
+              '</span>'+
+            '</div>'+
+            '<div style="margin:6px 0 2px;background:#eee5d2;border-radius:4px;height:6px"><div style="height:6px;width:'+Math.min(pct,100)+'%;background:var(--green);border-radius:4px"></div></div>'+
+            (reps?('<div style="margin-top:2px">'+reps+'</div>'):'')+
+          '</div>';
+        }).join('');
+        var splitRows=p.splits.map(function(x){
+          return '<div style="padding:7px 0;border-top:1px solid #f0e9d8;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">'+
+            '<span>✂ <strong>'+x.split.desc+'</strong> <span class="muted" style="font-size:11px">'+(x.split.date?x.split.date.split('-').reverse().join('/'):'')+'</span></span>'+
+            '<span style="display:flex;gap:6px;align-items:center"><span class="down num" style="font-size:13px">'+fmt(x.share.amount)+'</span>'+
+            '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="settleSplit(\''+x.split.id+'\',\''+x.share.memberId+'\')">✓ Đã trả</button></span>'+
+          '</div>';
+        }).join('');
+        return '<div class="card" style="padding:14px 16px;margin-bottom:12px'+(p.overdue?';border-color:#e0a89f':'')+'">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'+
+            '<span style="font-family:var(--serif);font-size:16px">👤 <strong>'+p.name+'</strong>'+(p.overdue?' <span class="pill" style="background:#fbe9e6;color:#a23b2d;border-color:#e0a89f">có khoản quá hạn</span>':'')+'</span>'+
+            '<span class="down num" style="font-weight:600">Tổng: '+fmt(p.total)+'</span>'+
+          '</div>'+
+          (p.loanRemain>0?('<div style="margin-top:6px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px">Cho vay · '+fmt(p.loanRemain)+'</div>'+loanRows):'')+
+          (p.splitRemain>0?('<div style="margin-top:8px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px">Share bill · '+fmt(p.splitRemain)+'</div>'+splitRows):'')+
+        '</div>';
+      }).join('');
+    }
+  }
+  // --- Cho vay chưa theo dõi ---
+  var un=untrackedLoanTx();
+  var uc=document.getElementById('untrackedCard');
+  if(uc){
+    if(!un.length){uc.style.display='none';}
+    else{
+      uc.style.display='';
+      document.getElementById('untrackedList').innerHTML=un.map(function(t){
+        return '<div class="acct-row" style="grid-template-columns:1fr auto auto;gap:8px;align-items:center">'+
+          '<span>'+(t.desc||'Cho vay')+' <span class="muted" style="font-size:11px">· '+t.date.split('-').reverse().join('/')+' · '+txAcctName(t)+'</span></span>'+
+          '<span class="num">'+fmt(t.amount)+'</span>'+
+          '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="trackLoanTx(\''+t.id+'\')">Theo dõi</button>'+
+        '</div>';
+      }).join('');
+    }
+  }
+}
 function renderOverview(){
   var g=groupTotals();var assets=0;for(var k in g)assets+=g[k];var cash=totalCash();
   var invest=assets-cash;var debt=totalDebt();
@@ -3478,7 +3658,7 @@ function renderOverview(){
 /* ---------- SAO LƯU / NHẮC ---------- */
 function exportJSON(){var data=currentBundle();var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="so-tai-chinh-backup-"+todayISO()+".json";a.click();}
 function backupNow(){exportJSON();META.lastBackup=new Date().toISOString();persistMeta();renderBackupStatus();}
-function importJSON(input){var f=input.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm("Nhập sẽ THAY THẾ toàn bộ sổ hiện tại. Tiếp tục?")){input.value="";return;}applyBundle(d);persist();fillAcctSelects();fillInvGroups();fillExpCat();onTypeChange();renderCatalog();renderBooks();renderInvest();runProjection();renderOverview();renderDebtTab();renderRecurList();alert("Đã nhập xong.");}catch(e){alert("File không hợp lệ: "+e.message);}input.value="";};rd.readAsText(f);}
+function importJSON(input){var f=input.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm("Nhập sẽ THAY THẾ toàn bộ sổ hiện tại. Tiếp tục?")){input.value="";return;}applyBundle(d);persist();fillAcctSelects();fillInvGroups();fillExpCat();onTypeChange();renderCatalog();renderBooks();renderInvest();runProjection();renderOverview();renderDebtTab();renderReceivables();renderRecurList();alert("Đã nhập xong.");}catch(e){alert("File không hợp lệ: "+e.message);}input.value="";};rd.readAsText(f);}
 
 function saveBackupSettings(){META.interval=parseInt(document.getElementById('bkInterval').value)||0;META.auto=document.getElementById('bkAuto').checked;persistMeta();renderBackupStatus();}
 function backupDueDays(){if(!META.interval)return null;if(!META.lastBackup)return 99999;var diff=(Date.now()-new Date(META.lastBackup).getTime())/864e5;return diff-META.interval;}
@@ -3660,7 +3840,7 @@ function gdRender(){
 }
 
 /* ---------- ĐIỀU HƯỚNG / KHỞI TẠO ---------- */
-function switchTab(t){['tong','chi','thu','dau','no','kehoach','phantich','danhmuc'].forEach(function(x){document.getElementById('panel-'+x).classList.toggle('active',x===t);document.getElementById('tab-'+x).classList.toggle('active',x===t);});if(t==='kehoach')renderPlanGoals();if(t==='no')renderDebtTab();if(t==='danhmuc'){renderCatalog();renderProfileCard();renderRecurList();renderMembers();renderSplitDebt();}if(t==='phantich')renderAnalysis();}
+function switchTab(t){['tong','chi','thu','dau','no','vay','kehoach','phantich','danhmuc'].forEach(function(x){document.getElementById('panel-'+x).classList.toggle('active',x===t);document.getElementById('tab-'+x).classList.toggle('active',x===t);});if(t==='kehoach')renderPlanGoals();if(t==='no')renderDebtTab();if(t==='vay')renderReceivables();if(t==='danhmuc'){renderCatalog();renderProfileCard();renderRecurList();renderMembers();renderSplitDebt();}if(t==='phantich')renderAnalysis();}
 function renderPlanGoals(){
   // Banner hồ sơ
   var banner=document.getElementById('retireInfoBanner');
@@ -3735,7 +3915,7 @@ function boot(){
   CUR_MONTH=monthKey(todayISO());
   refreshCatColors();fillAcctSelects();fillInvGroups();fillExpCat();onTypeChange();onExpCatChange();onDebtKindChange();
   captureNWSnapshot();
-  renderCatalog();renderSecurity();renderBooks();renderInvest();runProjection();renderOverview();renderBackupStatus();renderProfileCard();renderRecurList();renderMembers();renderSplitDebt();
+  renderCatalog();renderSecurity();renderBooks();renderInvest();runProjection();renderOverview();renderBackupStatus();renderProfileCard();renderRecurList();renderMembers();renderSplitDebt();renderReceivables();onLoanModeChange();
   gdLoadConf();gdInitClient();if(GD.gisReady&&GD.clientId&&GD.auto){gdTrySilent();}gdRender();
   document.addEventListener('input',function(e){var t=e.target;if(t&&t.classList&&t.classList.contains('money'))grpInput(t);});
   checkAutoBackup();

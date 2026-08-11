@@ -1586,7 +1586,7 @@ function renderCatalog(){
   aw.innerHTML=head+ACCOUNTS.map(function(a){var bal=acctBalance(a.id);
     return '<div class="acct-row" style="grid-template-columns:1.3fr 1fr 1fr auto">'+
       '<div><input type="text" class="editcat" value="'+a.name.replace(/"/g,'&quot;')+'" onblur="editAcctName(\''+a.id+'\',this.value)"></div>'+
-      '<div class="right"><input type="text" class="editcat num money" style="text-align:right" value="'+fmtShort(a.opening||0)+'" onblur="editOpening(\''+a.id+'\',this.value)"></div>'+
+      '<div class="right"><input type="text" class="editcat num money" style="text-align:right" value="'+groupThousands(String(Math.round(a.opening||0)))+'" onblur="editOpening(\''+a.id+'\',this.value)"></div>'+
       '<div class="right num h3">'+fmt(bal)+'</div>'+
       '<div class="right"><button class="del" onclick="delAccount(\''+a.id+'\')">Xóa</button></div></div>';
   }).join("");

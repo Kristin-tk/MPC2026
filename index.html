@@ -289,6 +289,11 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
       <div class="row" id="expAmtWrap" style="margin-top:12px">
         <div style="max-width:220px"><label>Số tiền</label><input id="expAmt" type="text" class="money" placeholder="vd: 250k"></div>
       </div>
+      <!-- ô cho vay: người vay + hẹn trả -->
+      <div class="row hide" id="expLoanWrap" style="margin-top:12px;align-items:flex-end">
+        <div style="flex:2;min-width:160px"><label>Người vay <span style="color:#a23b2d">*</span></label><input id="expBorrower" type="text" list="expBorrowerList" placeholder="vd Anh A, Chị B"><datalist id="expBorrowerList"></datalist></div>
+        <div style="flex:none;min-width:150px"><label>Ngày hẹn trả <span class="muted" style="font-size:10px">(tùy chọn)</span></label><input id="expDue" type="date"></div>
+      </div>
       <!-- ô đầu tư: tài sản thị trường -->
       <div class="row hide" id="expMarket" style="margin-top:12px">
         <div><label id="expQtyLbl">Số lượng</label><input id="expQty" type="text" placeholder="100"></div>
@@ -1336,6 +1341,7 @@ function onExpCatChange(){
   var isInv=v.indexOf('inv:')===0;
   var isFund=v.indexOf('fund:')===0;
   var isDebt=v.indexOf('debt:')===0;
+  var lw=document.getElementById('expLoanWrap');if(lw)lw.classList.add('hide'); // mặc định ẩn ô cho vay
   var mk=document.getElementById('expMarket'),sv=document.getElementById('expSave'),amt=document.getElementById('expAmtWrap'),dp=document.getElementById('expDebtPay');
   var dpt=document.getElementById('expDebtTotal');
   var descLbl=document.getElementById('expDescLbl');
@@ -1355,7 +1361,16 @@ function onExpCatChange(){
     if(!document.getElementById('expStart').value)document.getElementById('expStart').value=todayISO();
     return;
   }
-  if(!isInv){mk.classList.add('hide');sv.classList.add('hide');amt.classList.remove('hide');descLbl.textContent="Mô tả";return;}
+  if(!isInv){
+    mk.classList.add('hide');sv.classList.add('hide');amt.classList.remove('hide');descLbl.textContent="Mô tả";
+    var cc=(v.indexOf('chi:')===0)?catById(v.slice(4)):null;
+    if(cc&&cc.name==='Cho vay'){
+      if(lw)lw.classList.remove('hide');
+      var dl=document.getElementById('expBorrowerList');if(dl)dl.innerHTML=MEMBERS.map(function(m){return '<option value="'+m.name+'">';}).join('');
+      descLbl.textContent="Tên khoản / mục đích (tùy chọn)";
+    }
+    return;
+  }
   var c=catById(v.slice(4));var mode=c?classCalcMode(c.assetClass):"market";
   descLbl.textContent="Tên tài sản";amt.classList.add('hide');
   if(mode==="save"){sv.classList.remove('hide');mk.classList.add('hide');if(!document.getElementById('expStart').value)document.getElementById('expStart').value=todayISO();}
@@ -1439,6 +1454,22 @@ function addExpenseForm(){
   var cat=catById(v.slice(4));var desc=document.getElementById('expDesc').value.trim();var amt=parseAmount(document.getElementById('expAmt').value);
   if(!cat){hint.textContent="Chọn nhóm.";return;}
   if(amt===null||amt<=0){hint.textContent="Nhập số tiền hợp lệ.";return;}
+  // ----- nhánh CHO VAY: tạo khoản theo dõi ngay (không phải chi trơ) -----
+  if(cat.name==='Cho vay'){
+    var borrower=(document.getElementById('expBorrower').value||'').trim();
+    if(!borrower){hint.textContent="Nhập tên người vay ở ô Người vay.";return;}
+    var due=document.getElementById('expDue').value||'';
+    var loanId=uid();var mid=ensureMember(borrower);
+    var onCardL=(acctRaw&&acctRaw.indexOf('card:')===0)?acctRaw.slice(5):null;
+    var ltx={id:uid(),date:date,desc:desc||(borrower+' — cho vay'),amount:amt,cat:'Cho vay',type:'loanout',linkLoan:loanId};
+    if(onCardL){ltx.card=onCardL;ltx.acct="";}else{ltx.acct=acct;}
+    TX.push(ltx);
+    LOANS.push({id:loanId,name:desc||borrower,borrower:borrower,memberId:mid,amount:amt,date:date,dueDate:due,noCashOut:false,note:'',rate:0,repayments:[],status:'active'});
+    document.getElementById('expDesc').value="";document.getElementById('expAmt').value="";document.getElementById('expBorrower').value="";document.getElementById('expDue').value="";
+    persist();
+    hint.innerHTML="Đã cho <strong>"+borrower+"</strong> vay "+fmt(amt)+" — tạo khoản theo dõi ở tab <strong>Cho vay</strong>"+(onCardL?(" · ghi vào thẻ “"+debtName(onCardL)+"”"):"")+".";
+    CUR_MONTH=monthKey(date);renderBooks();renderOverview();renderReceivables();return;
+  }
   if(!desc)desc=cat.name;
   var onCard=(acctRaw&&acctRaw.indexOf('card:')===0)?acctRaw.slice(5):null;
   var etx={id:uid(),date:date,desc:desc,amount:amt,cat:cat.name,type:"chi"};

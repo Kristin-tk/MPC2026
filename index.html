@@ -372,12 +372,13 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
       <div class="row" style="align-items:flex-end;margin-bottom:10px">
         <div style="flex:none"><label>Ngày</label><input id="quickDateThu" type="date" style="width:auto"></div>
         <div style="flex:none;min-width:150px"><label>Cộng vào tài khoản</label><select id="quickAcctThu"></select></div>
+        <div style="flex:none;min-width:180px"><label>Nhóm</label><select id="quickCatThu"></select></div>
         <div style="flex:1;min-width:200px"><label>Gõ tự nhiên — vd: <em>lương 15tr, thưởng 3tr</em></label>
         <textarea id="quickInputThu" placeholder="lương 15tr, thưởng 3tr"></textarea></div>
       </div>
       <div class="row" style="margin-top:2px">
         <button class="btn btn-primary" style="flex:none" onclick="addQuick('thu')">Thêm khoản thu</button>
-        <span class="muted" style="flex:1;align-self:center" id="parseHintThu">Khoản thu sẽ <strong>cộng vào tài khoản</strong> đã chọn và tự xếp nhóm (Lương, Thưởng, Đầu tư/Lãi…).</span>
+        <span class="muted" style="flex:1;align-self:center" id="parseHintThu">Chọn <strong>Nhóm</strong> để xếp cố định, hoặc để <strong>“Tự động nhận diện”</strong> cho app tự đoán (Lương, Thưởng, Đầu tư/Lãi…). Khoản thu <strong>cộng vào tài khoản</strong> đã chọn.</span>
       </div>
     </div>
 

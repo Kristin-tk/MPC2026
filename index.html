@@ -188,7 +188,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
   <header class="top">
     <div class="brand">
       <h1>Sổ Tài Chính Cá Nhân</h1>
-      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn</div>
+      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build27</strong></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div id="gdHeaderBtn" style="font-size:12px"></div>
@@ -213,11 +213,6 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
 
   <!-- ===== TỔNG QUAN ===== -->
   <section id="panel-tong" class="panel active">
-    <div class="card" id="splitDebtCard" style="display:none;background:#f3f6f4;margin-bottom:18px">
-      <h2><span class="dot"></span>Ai đang nợ bạn</h2>
-      <div class="split-body"></div>
-      <div class="note" style="margin-top:10px">Bấm <strong>✓ tên khoản</strong> để ghi nhận đã trả — tự tạo khoản Thu vào sổ. Quản lý thành viên ở tab <strong>Danh mục</strong>.</div>
-    </div>
     <div class="card" id="recurDueCard" style="display:none;background:#fbf3df;border-color:var(--gold-soft);margin-bottom:18px">
       <h2><span class="dot"></span>Nhắc giao dịch định kỳ</h2>
       <div id="recurDueList"></div>
@@ -225,10 +220,20 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
     </div>
     <div class="grid-stat" id="netStat"></div>
 
+    <div class="card" id="monthStatCard" style="margin-top:18px">
+      <h2><span class="dot"></span><span id="monthStatTitle">Dòng tiền tháng này</span></h2>
+      <div class="grid-stat" id="monthStat"></div>
+    </div>
+
     <div class="card" id="forecastCard" style="margin-top:18px">
       <h2><span class="dot"></span>Dự báo dòng tiền <span class="muted" style="font-size:11px">(từ lịch định kỳ &amp; giao dịch tương lai)</span></h2>
       <div class="fc-body"></div>
       <div class="note" style="margin-top:12px">Đây là <strong>ước tính</strong> dựa trên giả định bạn nhập (lịch định kỳ, giao dịch đã ghi ngày tương lai). Khoản trả góp tính theo kỳ hiện tại; khoản <strong>quá hạn chưa ghi</strong> không tính ở đây (xem thẻ nhắc phía trên). Không phải dự báo thị trường hay khuyến nghị.</div>
+    </div>
+
+    <div class="card" id="splitDebtCard" style="display:none;background:#f3f6f4;margin-top:18px">
+      <h2><span class="dot"></span>Ai đang nợ bạn</h2>
+      <div class="split-body"></div>
     </div>
 
     <div class="card" style="margin-top:18px">
@@ -529,6 +534,12 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
       <h2><span class="dot"></span>Cho vay chưa theo dõi</h2>
       <div class="note" style="margin-bottom:10px">Các khoản <strong>Chi → Cho vay</strong> đã ghi ở tab Chi tiêu nhưng chưa gắn người vay. Bấm <strong>Theo dõi</strong> để chuyển thành khoản cho vay có theo dõi trả dần.</div>
       <div id="untrackedList"></div>
+    </div>
+
+    <div class="card" id="orphanCard" style="display:none;background:#fbe9e6;border-color:#e0a89f">
+      <h2><span class="dot"></span>Khoản cho vay thiếu giao dịch</h2>
+      <div class="note" style="margin-bottom:10px">Các khoản cho vay này <strong>không còn giao dịch xuất tiền gắn kèm</strong> (thường do đã xoá phiếu chi). Chọn <strong>Giữ (ngoài sổ)</strong> nếu tiền thật sự đã cho vay từ trước, hoặc <strong>Xoá</strong> nếu đây là khoản dư/ghi nhầm.</div>
+      <div id="orphanList"></div>
     </div>
 
     <div class="card">
@@ -3665,6 +3676,12 @@ function receivablesData(){
   arr.sort(function(a,b){return b.total-a.total;});
   return arr;
 }
+var RECEIV_OPEN={}; // trạng thái bung chi tiết theo người (mặc định gập)
+function toggleReceivPerson(k){RECEIV_OPEN[k]=!RECEIV_OPEN[k];renderReceivables();}
+function receivExpandAll(open){receivablesData().forEach(function(p){RECEIV_OPEN[p.key]=open;});renderReceivables();}
+// Khoản cho vay "mồ côi": còn hoạt động, đáng lẽ có giao dịch xuất tiền nhưng không tìm thấy (bị xoá)
+function orphanLoans(){return LOANS.filter(function(l){if(l.status!=='active')return false;if(l.noCashOut)return false;return !TX.some(function(t){return t.linkLoan===l.id&&t.type==='loanout';});});}
+function markLoanOffBook(id){var l=loanById(id);if(!l)return;l.noCashOut=true;persist();renderReceivables();renderOverview();}
 function renderReceivables(){
   fillLoanBorrowerList();
   var data=receivablesData();
@@ -3681,12 +3698,16 @@ function renderReceivables(){
       '<div class="stat"><div class="k">Share bill chưa trả</div><div class="v num">'+fmt(splitTot)+'</div><div class="d muted" style="font-size:11px">'+data.filter(function(p){return p.splitRemain>0;}).length+' người</div></div>'+
       (overCount>0?('<div class="stat" style="background:#fbe9e6;border-color:#e0a89f"><div class="k">Quá hạn</div><div class="v num down">'+fmt(overSum)+'</div><div class="d muted" style="font-size:11px">'+overCount+' khoản đã qua ngày hẹn</div></div>'):'');
   }
-  // --- Danh sách theo người ---
+  // --- Danh sách theo người (mặc định gập, bấm để bung chi tiết) ---
   var wrap=document.getElementById('receivList');
   if(wrap){
     if(!data.length){wrap.innerHTML='<div class="muted" style="font-size:13px">Chưa có ai đang nợ bạn. Thêm khoản cho vay bên dưới, hoặc chia tiền hoá đơn ở tab Chi tiêu.</div>';}
     else{
-      wrap.innerHTML=data.map(function(p){
+      var ctrl='<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">'+
+        '<button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="receivExpandAll(true)">Mở hết</button>'+
+        '<button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="receivExpandAll(false)">Thu gọn hết</button></div>';
+      wrap.innerHTML=ctrl+data.map(function(p){
+        var open=!!RECEIV_OPEN[p.key];
         var loanRows=p.loans.map(function(l){
           var rem=loanRemain(l),paid=loanPaid(l),pct=l.amount>0?paid/l.amount*100:100;
           var over=loanOverdue(l);
@@ -3714,13 +3735,33 @@ function renderReceivables(){
             '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="settleSplit(\''+x.split.id+'\',\''+x.share.memberId+'\')">✓ Ghi trả</button></span>'+
           '</div>';
         }).join('');
+        var parts=[];if(p.loanRemain>0)parts.push('cho vay '+fmtShort(p.loanRemain));if(p.splitRemain>0)parts.push('share bill '+fmtShort(p.splitRemain));
+        var detail=
+          (p.loanRemain>0?('<div style="margin-top:6px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px">Cho vay · '+fmt(p.loanRemain)+'</div>'+loanRows):'')+
+          (p.splitRemain>0?('<div style="margin-top:8px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px">Share bill · '+fmt(p.splitRemain)+'</div>'+splitRows):'');
         return '<div class="card" style="padding:14px 16px;margin-bottom:12px'+(p.overdue?';border-color:#e0a89f':'')+'">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'+
-            '<span style="font-family:var(--serif);font-size:16px">👤 <strong>'+p.name+'</strong>'+(p.overdue?' <span class="pill" style="background:#fbe9e6;color:#a23b2d;border-color:#e0a89f">có khoản quá hạn</span>':'')+'</span>'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer" onclick="toggleReceivPerson(\''+p.key+'\')">'+
+            '<span style="font-family:var(--serif);font-size:16px">'+(open?'▾':'▸')+' 👤 <strong>'+p.name+'</strong>'+(p.overdue?' <span class="pill" style="background:#fbe9e6;color:#a23b2d;border-color:#e0a89f">quá hạn</span>':'')+' <span class="muted" style="font-size:11px;font-family:var(--sans)">'+parts.join(' · ')+'</span></span>'+
             '<span class="down num" style="font-weight:600">Tổng: '+fmt(p.total)+'</span>'+
           '</div>'+
-          (p.loanRemain>0?('<div style="margin-top:6px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px">Cho vay · '+fmt(p.loanRemain)+'</div>'+loanRows):'')+
-          (p.splitRemain>0?('<div style="margin-top:8px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px">Share bill · '+fmt(p.splitRemain)+'</div>'+splitRows):'')+
+          '<div style="display:'+(open?'block':'none')+'">'+detail+'</div>'+
+        '</div>';
+      }).join('');
+    }
+  }
+  // --- Khoản cho vay mồ côi (mất giao dịch gắn kèm) ---
+  var orph=orphanLoans();
+  var oc=document.getElementById('orphanCard');
+  if(oc){
+    if(!orph.length){oc.style.display='none';}
+    else{
+      oc.style.display='';
+      document.getElementById('orphanList').innerHTML=orph.map(function(l){
+        return '<div class="acct-row" style="grid-template-columns:1fr auto auto auto;gap:8px;align-items:center">'+
+          '<span><strong>'+(l.name||loanWho(l))+'</strong> <span class="muted" style="font-size:11px">· '+loanWho(l)+' · '+fmt(l.amount)+'</span></span>'+
+          '<span class="num" style="font-size:13px">còn '+fmt(loanRemain(l))+'</span>'+
+          '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Giữ khoản, coi như tiền đã xuất ngoài sổ" onclick="markLoanOffBook(\''+l.id+'\')">Giữ (ngoài sổ)</button>'+
+          '<button class="del" style="font-size:12px" onclick="deleteLoan(\''+l.id+'\')">✕ Xoá</button>'+
         '</div>';
       }).join('');
     }
@@ -3768,6 +3809,19 @@ function renderOverview(){
   renderDebts();
   renderRecurDue();
   renderCashForecast();
+  renderMonthStat();
+}
+function renderMonthStat(){
+  var el=document.getElementById('monthStat');if(!el)return;
+  var mk=monthKey(todayISO());
+  var thu=monthIncome(mk),chi=monthSpend(mk),inv=sumType(mk,'invest');
+  var net=thu-chi-inv;
+  el.innerHTML=
+    '<div class="stat"><div class="k">Thu nhập</div><div class="v num up">'+fmt(thu)+'</div></div>'+
+    '<div class="stat"><div class="k">Chi tiêu</div><div class="v num down">'+fmt(chi)+'</div></div>'+
+    (inv>0?('<div class="stat"><div class="k">Rót đầu tư</div><div class="v num">'+fmt(inv)+'</div></div>'):'')+
+    '<div class="stat" style="background:#fbf3df;border-color:var(--gold-soft)"><div class="k">Còn lại</div><div class="v num '+(net<0?"down":"")+'">'+fmt(net)+'</div><div class="d muted" style="font-size:11px">thu − chi'+(inv>0?' − đầu tư':'')+'</div></div>';
+  var t=document.getElementById('monthStatTitle');if(t)t.textContent='Dòng tiền tháng '+mk.split('-').reverse().join('/');
 }
 
 /* ---------- SAO LƯU / NHẮC ---------- */

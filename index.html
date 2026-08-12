@@ -214,7 +214,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
   <!-- ===== TỔNG QUAN ===== -->
   <section id="panel-tong" class="panel active">
     <div class="card" id="splitDebtCard" style="display:none;background:#f3f6f4;margin-bottom:18px">
-      <h2><span class="dot"></span>Công nợ chia tiền</h2>
+      <h2><span class="dot"></span>Ai đang nợ bạn</h2>
       <div class="split-body"></div>
       <div class="note" style="margin-top:10px">Bấm <strong>✓ tên khoản</strong> để ghi nhận đã trả — tự tạo khoản Thu vào sổ. Quản lý thành viên ở tab <strong>Danh mục</strong>.</div>
     </div>
@@ -361,6 +361,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
 
     <div class="card">
       <h2><span class="dot"></span>Khoản chi trong tháng</h2>
+      <div style="margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><label style="font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;margin:0">Lọc theo nguồn</label><select id="txFilterChi" onchange="onTxFilter('chi',this.value)" style="max-width:260px"></select></div>
       <div id="txTable"></div>
     </div>
   </section>
@@ -405,6 +406,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
 
     <div class="card">
       <h2><span class="dot"></span>Khoản thu trong tháng</h2>
+      <div style="margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><label style="font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;margin:0">Lọc theo nguồn</label><select id="txFilterThu" onchange="onTxFilter('thu',this.value)" style="max-width:260px"></select></div>
       <div id="txTableThu"></div>
     </div>
   </section>
@@ -519,7 +521,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
 
     <div class="card" style="margin-top:18px">
       <h2><span class="dot"></span>Ai đang nợ bạn</h2>
-      <div class="note" style="margin-bottom:12px">Gộp <strong>cho vay</strong> và <strong>share bill (chia tiền)</strong> theo từng người. Bấm <strong>✓ Ghi trả</strong> / <strong>✓ Đã trả</strong> để thu — app tự ghi vào sổ Thu đúng tài khoản bạn chọn. Tiền thu về là <strong>thu hồi vốn</strong>, không tính vào thu nhập.</div>
+      <div class="note" style="margin-bottom:12px">Gộp <strong>cho vay</strong> và <strong>share bill (chia tiền)</strong> theo từng người. Bấm <strong>✓ Ghi trả</strong> để thu — app tự ghi vào sổ Thu đúng tài khoản bạn chọn. Tiền thu về là <strong>thu hồi vốn</strong>, không tính vào thu nhập.</div>
       <div id="receivList"></div>
     </div>
 
@@ -671,11 +673,11 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
         <button class="btn btn-primary" style="flex:none" onclick="addMember()">Thêm</button>
       </div>
       <div id="memberList"></div>
-      <div class="note" style="margin-top:10px">Sau khi thêm thành viên, vào tab <strong>Chi tiêu</strong> → bấm nút <strong>✂</strong> cạnh khoản chi để chia tiền. Khi ai trả → bấm nút ✓ ở Tổng quan để ghi vào sổ Thu nhập.</div>
+      <div class="note" style="margin-top:10px">Sau khi thêm thành viên, vào tab <strong>Chi tiêu</strong> → bấm nút <strong>✂</strong> cạnh khoản chi để chia tiền. Khi ai trả → vào tab <strong>Cho vay</strong> bấm <strong>✓ Ghi trả</strong> (trả từng phần được) để ghi vào sổ Thu.</div>
     </div>
 
     <div class="card" id="splitDebtCatWrap">
-      <h2><span class="dot"></span>Công nợ đang chờ</h2>
+      <h2><span class="dot"></span>Ai đang nợ bạn</h2>
       <div id="splitDebtCatCard"></div>
     </div>
 
@@ -1019,7 +1021,7 @@ function applyBundle(d){
   RECUR=d.recur||[];
   NWHIST=d.nwhist||[];
   MEMBERS=(d.members||[]).map(function(m){return {id:m.id||uid(),name:m.name||'',active:m.active!==false};});
-  SPLITS=(d.splits||[]).map(function(s){return {id:s.id||uid(),txId:s.txId,desc:s.desc||'',total:s.total||0,date:s.date||'',shares:s.shares||[],settled:s.settled||[]};});
+  SPLITS=(d.splits||[]).map(function(s){return {id:s.id||uid(),txId:s.txId,desc:s.desc||'',total:s.total||0,date:s.date||'',shares:s.shares||[],settled:s.settled||[],paid:s.paid||{}};});
   LOANS=(d.loans||[]).map(function(l){return {id:l.id||uid(),name:l.name||'',borrower:l.borrower||'',memberId:l.memberId||null,amount:l.amount||0,date:l.date||todayISO(),dueDate:l.dueDate||'',noCashOut:!!l.noCashOut,note:l.note||'',rate:l.rate||0,repayments:(l.repayments||[]).map(function(r){return {id:r.id||uid(),date:r.date,amount:r.amount||0,acct:r.acct||null};}),status:l.status||'active'};});
   if(!Array.isArray(NWHIST))NWHIST=[];
   NWHIST=NWHIST.filter(function(s){return s&&s.ym;});
@@ -1261,7 +1263,7 @@ function fillAcctSelects(){
   ['quickAcct','expAcct'].forEach(function(id){var s=document.getElementById(id);if(s){var p=s.value;s.innerHTML=acctOptions(null,false,true);if(p)s.value=p;}});
   var t=document.getElementById('quickAcctThu');if(t){var tp=t.value;t.innerHTML=acctOptions(null,false,false);if(tp)t.value=tp;}
   var qct=document.getElementById('quickCatThu');if(qct){var qctp=qct.value;qct.innerHTML='<option value="">Tự động nhận diện</option>'+CATEGORIES.filter(function(c){return c.kind==="thu";}).map(function(c){return '<option value="'+c.name+'">'+(c.icon?c.icon+' ':'')+c.name+'</option>';}).join("");if(qctp)qct.value=qctp;}
-  var la=document.getElementById('lAcct');if(la){var lap=la.value;la.innerHTML=acctOptions(null,false,false);if(lap)la.value=lap;}
+  var la=document.getElementById('lAcct');if(la){var lap=la.value;la.innerHTML=acctOptions(null,false,true);if(lap)la.value=lap;}
   var h=document.getElementById('hAcct');if(h){var hp=h.value;h.innerHTML=acctOptions(null,true,false);if(hp)h.value=hp;}
   var di=document.getElementById('dInflow');if(di){var dpv=di.value;di.innerHTML='<option value="">— Không —</option>'+ACCOUNTS.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join("");if(dpv)di.value=dpv;}
   var dpa=document.getElementById('dPayAcct');if(dpa){var pv=dpa.value;dpa.innerHTML='<option value="">— Không đặt —</option>'+ACCOUNTS.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join("");if(pv)dpa.value=pv;}
@@ -1484,7 +1486,28 @@ function addExpenseForm(){
 function setMonth(mk){CUR_MONTH=mk;renderBooks();}
 function delTx(id){var t=null;for(var i=0;i<TX.length;i++)if(TX[i].id===id)t=TX[i];
   if(t&&t.type==="invest"&&t.linkHold){if(!confirm("Khoản này gắn với tài sản trong danh mục. Xóa cả tài sản tương ứng?"))return;HOLD=HOLD.filter(function(h){return h.id!==t.linkHold;});}
-  TX=TX.filter(function(x){return x.id!==id;});persist();renderBooks();renderInvest();renderOverview();renderDebtTab();}
+  if(t&&t.linkLoan){
+    var l=loanById(t.linkLoan);
+    if(t.type==="loanout"&&l){
+      if(confirm("Giao dịch này là tiền cho vay ra của khoản “"+(l.name||loanWho(l))+"”.\n\n• OK = xoá luôn khoản cho vay khỏi tab Cho vay.\n• Huỷ = giữ khoản cho vay (đánh dấu tiền đã xuất ngoài sổ), chỉ xoá giao dịch này.")){
+        LOANS=LOANS.filter(function(x){return x.id!==t.linkLoan;});
+      }else{ l.noCashOut=true; }
+    }else if(t.type==="loanback"&&l){
+      var idx=-1;
+      for(var r=0;r<l.repayments.length;r++){var rp=l.repayments[r];if((t.repayId&&rp.id===t.repayId)||(!t.repayId&&rp.amount===t.amount&&rp.date===t.date)){idx=r;break;}}
+      if(idx>=0)l.repayments.splice(idx,1);
+      if(loanRemain(l)>0)l.status='active';
+    }
+  }
+  if(t&&t.linkSplit){
+    var sp=splitById(t.linkSplit);
+    if(sp&&t.splitMember){
+      if(sp.paid)sp.paid[t.splitMember]=Math.max(0,(sp.paid[t.splitMember]||0)-t.amount);
+      var si=sp.settled.indexOf(t.splitMember);
+      if(si>=0){var sh2=sp.shares.find(function(x){return x.memberId===t.splitMember;});if(sh2&&splitShareRemain(sp,sh2)>0)sp.settled.splice(si,1);}
+    }
+  }
+  TX=TX.filter(function(x){return x.id!==id;});persist();renderBooks();renderInvest();renderOverview();renderDebtTab();renderReceivables();}
 function changeCatType(id,val){var k=catKind(val);for(var i=0;i<TX.length;i++)if(TX[i].id===id){TX[i].cat=val;if(k)TX[i].type=(k==="thu")?"thu":"chi";}persist();renderBooks();renderOverview();}
 function changeAcct(id,val){for(var i=0;i<TX.length;i++)if(TX[i].id===id){if(val.indexOf('card:')===0){TX[i].card=val.slice(5);TX[i].acct="";}else{TX[i].acct=val;TX[i].card=undefined;}}persist();renderBooks();renderOverview();}
 function changeDate(id,val){if(!val)return;for(var i=0;i<TX.length;i++)if(TX[i].id===id)TX[i].date=val;persist();CUR_MONTH=monthKey(val);renderBooks();renderOverview();}
@@ -1663,6 +1686,10 @@ function renderBudget(mk,byCat){
   }
   document.getElementById('budgetCat').innerHTML=CATEGORIES.filter(function(c){return c.kind==="chi";}).map(function(c){return '<option>'+c.name+'</option>';}).join("");
 }
+var TXFILTER={chi:'',thu:''}; // lọc bảng liệt kê theo nguồn (tài khoản/thẻ); '' = tất cả
+function txMatchesSource(t,f){ if(!f)return true; if(f.indexOf('card:')===0)return t.card===f.slice(5); return (t.acct===f)&&!t.card; }
+function fillTxFilter(id,type){var s=document.getElementById(id);if(!s)return;var cur=TXFILTER[type]||'';s.innerHTML='<option value="">Tất cả nguồn</option>'+acctOptions(null,false,true);s.value=cur;}
+function onTxFilter(type,val){TXFILTER[type]=val;if(type==='chi')renderExpense();else renderIncome();}
 function renderTx(mk,type,wrapId){
   var md=monthData(mk);
   var main=md.filter(function(t){return t.type===type;});
@@ -1670,8 +1697,10 @@ function renderTx(mk,type,wrapId){
   if(type==="chi")extra=md.filter(function(t){return t.type==="debtpay"||t.type==="loanout";}); // trả gốc nợ / cho vay ra = dòng tiền ra
   else if(type==="thu")extra=md.filter(function(t){return t.type==="loanin"||t.type==="loanback";}); // nhận tiền vay / thu hồi cho vay = dòng tiền vào
   var d=main.concat(extra).sort(function(a,b){return a.date<b.date?1:-1;});
+  var f=TXFILTER[type]||'';
+  if(f)d=d.filter(function(t){return txMatchesSource(t,f);});
   var wrap=document.getElementById(wrapId);
-  if(!d.length){wrap.innerHTML='<div class="empty">Chưa có khoản '+(type==="thu"?"thu":"chi")+' trong tháng này.</div>';return;}
+  if(!d.length){wrap.innerHTML='<div class="empty">'+(f?('Không có khoản '+(type==="thu"?"thu":"chi")+' từ nguồn này trong tháng.'):('Chưa có khoản '+(type==="thu"?"thu":"chi")+' trong tháng này.'))+'</div>';return;}
   var rows=d.map(function(t){
     var isTransfer=(t.type==="debtpay"||t.type==="loanin"||t.type==="loanout"||t.type==="loanback");
     var dateCell='<input type="date" class="editcat" style="width:128px" value="'+t.date+'" onchange="changeDate(\''+t.id+'\',this.value)">';
@@ -1686,7 +1715,7 @@ function renderTx(mk,type,wrapId){
     }else{
       groupCell='<select class="editcat" onchange="changeCatType(\''+t.id+'\',this.value)">'+catOptions(t.cat)+'</select>';
     }
-    var acctCell='<select class="editcat" onchange="changeAcct(\''+t.id+'\',this.value)">'+acctOptions(t.card?("card:"+t.card):t.acct,false,type==="chi"&&!isTransfer)+'</select>';
+    var acctCell='<select class="editcat" onchange="changeAcct(\''+t.id+'\',this.value)">'+acctOptions(t.card?("card:"+t.card):t.acct,false,(type==="chi"&&!isTransfer)||!!t.card)+'</select>';
     var acctLabel=t.card?("Thẻ: "+debtName(t.card)):acctName(t.acct||"");
     var splitBtn='';
     if(t.type==='chi'){
@@ -1716,8 +1745,8 @@ function renderBarChart(containerId,type,color){
   }).join('');
   el.innerHTML='<div class="bar-chart">'+bars+'</div>';
 }
-function renderExpense(){var mk=CUR_MONTH;var byCat=renderStatsChi(mk);var tot=0;for(var c in byCat)tot+=byCat[c];drawDonut('donut','legend',byCat,tot,CAT_COLORS);renderBudget(mk,byCat);renderTx(mk,"chi","txTable");renderBarChart('chiBarChart','chi','#d8cdb6');}
-function renderIncome(){var mk=CUR_MONTH;var byCat=renderStatsThu(mk);var tot=0;for(var c in byCat)tot+=byCat[c];drawDonut('donutThu','legendThu',byCat,tot,CAT_COLORS);renderTx(mk,"thu","txTableThu");renderBarChart('thuBarChart','thu','#b9d3bf');}
+function renderExpense(){var mk=CUR_MONTH;var byCat=renderStatsChi(mk);var tot=0;for(var c in byCat)tot+=byCat[c];drawDonut('donut','legend',byCat,tot,CAT_COLORS);renderBudget(mk,byCat);fillTxFilter('txFilterChi','chi');renderTx(mk,"chi","txTable");renderBarChart('chiBarChart','chi','#d8cdb6');}
+function renderIncome(){var mk=CUR_MONTH;var byCat=renderStatsThu(mk);var tot=0;for(var c in byCat)tot+=byCat[c];drawDonut('donutThu','legendThu',byCat,tot,CAT_COLORS);fillTxFilter('txFilterThu','thu');renderTx(mk,"thu","txTableThu");renderBarChart('thuBarChart','thu','#b9d3bf');}
 function renderBooks(){fillMonthPicks();renderExpense();renderIncome();}
 
 function exportCSV(){
@@ -1937,7 +1966,7 @@ function totalFunds(){return 0;}
 function debtById(id){for(var i=0;i<DEBTS.length;i++)if(DEBTS[i].id===id)return DEBTS[i];return null;}
 function debtName(id){var d=debtById(id);return d?d.name:"?";}
 // tổng đã quẹt vào thẻ tín dụng (chỉ kind="card")
-function debtCharges(did){var s=0;TX.forEach(function(t){if(t.card===did&&t.type==="chi")s+=t.amount;});return s;}
+function debtCharges(did){var s=0;TX.forEach(function(t){if(t.card===did&&(t.type==="chi"||t.type==="loanout"))s+=t.amount;});return s;}
 // tổng gốc đã trả (mọi loại nợ)
 function debtPrincipalPaid(did){var s=0;TX.forEach(function(t){if(t.linkDebt===did&&t.type==="debtpay")s+=t.amount;});return s;}
 // tổng lãi đã trả (ghi nhận là chi "Lãi vay")
@@ -3295,19 +3324,23 @@ function exportPickMonth(){
 /* ====================== CHIA TIỀN / CÔNG NỢ NỘI BỘ ====================== */
 function memberById(id){return MEMBERS.find(function(m){return m.id===id;})||null;}
 function splitById(id){return SPLITS.find(function(s){return s.id===id;})||null;}
+function splitPaidAmt(s,mid){return (s.paid&&s.paid[mid])||0;}
+function splitShareRemain(s,sh){return Math.max(0,(sh.amount||0)-splitPaidAmt(s,sh.memberId));}
 // Tính tổng nợ từng người (chưa trả) cho đến nay
 function debtSummary(){
   var by={};
   SPLITS.forEach(function(s){
     s.shares.forEach(function(sh){
       if(sh.memberId==='__me__')return; // phần của mình không tính
-      if(s.settled.indexOf(sh.memberId)>=0)return; // đã trả
-      by[sh.memberId]=(by[sh.memberId]||0)+sh.amount;
+      if(s.settled.indexOf(sh.memberId)>=0)return; // đã tất toán
+      var rem=splitShareRemain(s,sh);if(rem<=0)return; // đã trả đủ
+      by[sh.memberId]=(by[sh.memberId]||0)+rem;
     });
   });
   return by;
 }
 // Mở dialog chia tiền cho 1 giao dịch
+var SPLIT_EX={}; // người bị loại khỏi lần chia hiện tại
 function openSplitDialog(txId){
   var t=TX.find(function(x){return x.id===txId;});
   if(!t)return;
@@ -3318,12 +3351,14 @@ function openSplitDialog(txId){
   if(!activeM.length){alert("Chưa có thành viên nào. Thêm thành viên ở tab Danh mục trước.");return;}
   var n=activeM.length+1; // +1 là mình
   var defAmt=existing?'':Math.round(t.amount/n);
-  var sharesHtml=activeM.map(function(m){
+  SPLIT_EX={}; // tập người bị loại khỏi lần chia này
+  if(existing){activeM.forEach(function(m){if(!existing.shares.find(function(sh){return sh.memberId===m.id;}))SPLIT_EX[m.id]=true;});}
+  var sharesHtml=activeM.filter(function(m){return !SPLIT_EX[m.id];}).map(function(m){
     var ex=existing?existing.shares.find(function(sh){return sh.memberId===m.id;}):null;
     var amt=ex?ex.amount:defAmt;
-    return '<tr><td style="padding:6px 8px">'+m.name+'</td>'+
+    return '<tr id="shrow_'+m.id+'"><td style="padding:6px 8px">'+m.name+'</td>'+
       '<td style="padding:6px 8px"><input type="text" class="money" id="sh_'+m.id+'" value="'+amt+'" style="width:120px;text-align:right" oninput="formatMoneyInput(this)"></td>'+
-      '<td style="padding:6px 4px"><button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="splitSetEqual(\''+txId+'\')">Đều</button></td></tr>';
+      '<td style="padding:6px 4px;white-space:nowrap"><button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="splitSetEqual(\''+txId+'\')">Đều</button> <button class="del" style="font-size:13px" title="Bỏ người này khỏi lần chia" onclick="splitRemovePerson(\''+txId+'\',\''+m.id+'\')">✕</button></td></tr>';
   }).join('');
   var myEx=existing?existing.shares.find(function(sh){return sh.memberId==='__me__';}):null;
   var myAmt=myEx?myEx.amount:defAmt;
@@ -3353,11 +3388,16 @@ function updateSplitSum(txId,total){
 }
 function splitSetEqual(txId){
   var t=TX.find(function(x){return x.id===txId;});if(!t)return;
-  var activeM=MEMBERS.filter(function(m){return m.active;});
+  var activeM=MEMBERS.filter(function(m){return m.active&&!SPLIT_EX[m.id];});
   var n=activeM.length+1;var each=Math.round(t.amount/n);var rem=t.amount-each*n;
   var meEl=document.getElementById('sh___me__');if(meEl)meEl.value=each+rem; // phần dư vào "tôi"
   activeM.forEach(function(m){var el=document.getElementById('sh_'+m.id);if(el)el.value=each;});
   bindMoneyInputs();updateSplitSum(txId,t.amount);
+}
+function splitRemovePerson(txId,mid){
+  SPLIT_EX[mid]=true;
+  var r=document.getElementById('shrow_'+mid);if(r)r.remove();
+  var t=TX.find(function(x){return x.id===txId;});if(t)updateSplitSum(txId,t.amount);
 }
 function saveSplit(txId){
   var t=TX.find(function(x){return x.id===txId;});if(!t)return;
@@ -3365,7 +3405,7 @@ function saveSplit(txId){
   var shares=[];var sum=0;
   var meAmt=parseAmount(document.getElementById('sh___me__').value)||0;
   shares.push({memberId:'__me__',amount:meAmt});sum+=meAmt;
-  activeM.forEach(function(m){var amt=parseAmount(document.getElementById('sh_'+m.id).value)||0;shares.push({memberId:m.id,amount:amt});sum+=amt;});
+  activeM.forEach(function(m){if(SPLIT_EX[m.id])return;var el=document.getElementById('sh_'+m.id);if(!el)return;var amt=parseAmount(el.value)||0;shares.push({memberId:m.id,amount:amt});sum+=amt;});
   if(Math.abs(sum-t.amount)>1){if(!confirm('Tổng phần ('+fmt(sum)+') khác tổng giao dịch ('+fmt(t.amount)+'). Vẫn lưu?'))return;}
   // xoá split cũ nếu có
   SPLITS=SPLITS.filter(function(s){return s.txId!==txId;});
@@ -3380,60 +3420,97 @@ function deleteSplit(txId){
 }
 function closeSplitModal(){var m=document.getElementById('splitModal');if(m)m.remove();}
 // Đánh dấu đã trả → tạo giao dịch thu
+// Đánh dấu trả → mở modal chọn tài khoản + số tiền (cho phép trả từng phần)
 function settleSplit(splitId,memberId){
   var s=splitById(splitId);if(!s)return;
   var m=memberById(memberId);if(!m)return;
   var sh=s.shares.find(function(x){return x.memberId===memberId;});if(!sh)return;
-  if(!confirm(m.name+' trả '+fmt(sh.amount)+'?\nGhi vào sổ Thu nhập luôn?'))return;
-  // Tạo giao dịch thu
+  var remain=splitShareRemain(s,sh);
+  if(remain<=0){alert('Phần này đã trả đủ.');return;}
+  var opts=ACCOUNTS.map(function(a){return '<option value="'+a.id+'">'+a.name+'</option>';}).join('');
+  var html='<div id="settleModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center">'+
+    '<div style="background:var(--card);border-radius:16px;padding:24px;min-width:320px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">'+
+    '<h2 style="margin:0 0 4px">Ghi '+m.name+' trả</h2>'+
+    '<div class="muted" style="font-size:12px;margin-bottom:14px">'+s.desc+' · còn lại '+fmt(remain)+'</div>'+
+    '<label>Số tiền nhận</label><input type="text" class="money" id="stAmt" value="'+remain+'" oninput="formatMoneyInput(this)">'+
+    '<div class="row" style="margin-top:10px">'+
+      '<div style="flex:1;min-width:150px"><label>Tài khoản nhận</label><select id="stAcct">'+opts+'</select></div>'+
+      '<div style="flex:none;min-width:140px"><label>Ngày nhận</label><input type="date" id="stDate" value="'+todayISO()+'"></div>'+
+    '</div>'+
+    '<div class="row" style="gap:8px;margin-top:16px">'+
+      '<button class="btn btn-primary" onclick="confirmSettle(\''+splitId+'\',\''+memberId+'\')">Ghi vào sổ Thu</button>'+
+      '<button class="btn btn-ghost" onclick="closeSettleModal()">Huỷ</button>'+
+    '</div>'+
+    '<div class="note" style="margin-top:10px">Trả ít hơn cũng được — phần còn lại vẫn được theo dõi. Ghi vào đúng tài khoản bạn chọn.</div>'+
+    '</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);bindMoneyInputs();
+}
+function closeSettleModal(){var m=document.getElementById('settleModal');if(m)m.remove();}
+function confirmSettle(splitId,memberId){
+  var s=splitById(splitId);if(!s){closeSettleModal();return;}
+  var m=memberById(memberId);if(!m){closeSettleModal();return;}
+  var sh=s.shares.find(function(x){return x.memberId===memberId;});if(!sh){closeSettleModal();return;}
+  var remain=splitShareRemain(s,sh);
+  var amt=parseAmount(document.getElementById('stAmt').value)||0;
+  var acct=document.getElementById('stAcct').value||DEF_ACCT;
+  var date=document.getElementById('stDate').value||todayISO();
+  if(amt<=0){alert('Số tiền không hợp lệ.');return;}
+  if(amt>remain+1&&!confirm('Số tiền ('+fmt(amt)+') lớn hơn phần còn lại ('+fmt(remain)+'). Vẫn ghi?'))return;
+  var rec=Math.min(amt,remain);
   var cat='Chia tiền';if(!catExists(cat))CATEGORIES.push({id:uid(),name:cat,kind:'thu',color:'#4a6d8c',sys:false});
-  TX.push({id:uid(),date:todayISO(),desc:m.name+' trả — '+s.desc,amount:sh.amount,cat:cat,type:'thu',acct:DEF_ACCT});
-  s.settled.push(memberId);
-  persist();renderBooks();renderSplitDebt();renderOverview();
+  if(!s.paid)s.paid={};
+  s.paid[memberId]=(s.paid[memberId]||0)+rec;
+  TX.push({id:uid(),date:date,desc:m.name+' trả — '+s.desc,amount:rec,cat:cat,type:'thu',acct:acct,linkSplit:splitId,splitMember:memberId});
+  if(splitShareRemain(s,sh)<=0&&s.settled.indexOf(memberId)<0)s.settled.push(memberId);
+  persist();closeSettleModal();renderBooks();renderSplitDebt();renderOverview();renderReceivables();
 }
 // Card công nợ ở Tổng quan + tab Danh mục
 function renderSplitDebt(){
   var card=document.getElementById('splitDebtCard');
   var catCard=document.getElementById('splitDebtCatCard');
-  var by=debtSummary();
-  var keys=Object.keys(by).filter(function(id){return by[id]>0;});
-  if(!keys.length){
+  var data=(typeof receivablesData==='function')?receivablesData().filter(function(p){return p.total>0;}):[];
+  if(!data.length){
     if(card)card.style.display='none';
-    if(catCard)catCard.innerHTML='<div class="muted" style="font-size:13px">Không có công nợ nào đang chờ.</div>';
+    if(catCard)catCard.innerHTML='<div class="muted" style="font-size:13px">Không có ai đang nợ bạn.</div>';
     return;
   }
   if(card)card.style.display='';
-  var rows=keys.map(function(mid){
-    var m=memberById(mid);var name=m?m.name:mid;var amt=by[mid];
-    // tìm các split liên quan
-    var pending=SPLITS.filter(function(s){return s.shares.some(function(sh){return sh.memberId===mid&&s.settled.indexOf(mid)<0;});});
-    var detail=pending.map(function(s){var sh=s.shares.find(function(x){return x.memberId===mid;});return s.desc+' ('+fmt(sh.amount)+')';}).join(', ');
-    var btns=pending.map(function(s){return '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px;margin:2px" onclick="settleSplit(\''+s.id+'\',\''+mid+'\')">✓ '+s.desc.slice(0,12)+(s.desc.length>12?'…':'')+'</button>';}).join('');
-    return '<div class="acct-row" style="grid-template-columns:1fr auto;gap:8px;align-items:start;padding:10px 0">'+
-      '<div><strong>'+name+'</strong> <span class="down" style="font-size:13px">nợ '+fmt(amt)+'</span>'+
-      '<div class="muted" style="font-size:11px;margin-top:2px">'+detail+'</div>'+
-      '<div style="margin-top:6px">'+btns+'</div></div></div>';
+  var rows=data.map(function(p){
+    var parts=[];
+    if(p.loanRemain>0)parts.push('cho vay '+fmtShort(p.loanRemain));
+    if(p.splitRemain>0)parts.push('share bill '+fmtShort(p.splitRemain));
+    return '<div class="acct-row" style="grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;cursor:pointer" title="Bấm để sang tab Cho vay" onclick="switchTab(\'vay\')">'+
+      '<div><strong>'+p.name+'</strong>'+(p.overdue?' <span class="pill" style="background:#fbe9e6;color:#a23b2d;border-color:#e0a89f;font-size:10px">quá hạn</span>':'')+' <span class="muted" style="font-size:11px">'+parts.join(' · ')+'</span></div>'+
+      '<span class="down num" style="font-weight:600">'+fmt(p.total)+'</span>'+
+    '</div>';
   }).join('');
-  var html='<div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px">Đang nợ bạn</div>'+rows;
+  var totalAll=data.reduce(function(s,p){return s+p.total;},0);
+  var html='<div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px">Đang nợ bạn · tổng '+fmt(totalAll)+'</div>'+rows+
+    '<div class="muted" style="font-size:11px;margin-top:8px">Bấm vào tên để sang tab <strong>Cho vay</strong> ghi nhận trả (từng phần được).</div>';
   if(card)card.querySelector('.split-body').innerHTML=html;
   if(catCard)catCard.innerHTML=html;
 }
 // Render danh sách thành viên ở Danh mục
+var MEMBERS_COLLAPSED=true;
+function toggleMembersList(){MEMBERS_COLLAPSED=!MEMBERS_COLLAPSED;renderMembers();}
 function renderMembers(){
   var el=document.getElementById('memberList');if(!el)return;
   if(!MEMBERS.length){el.innerHTML='<div class="muted" style="font-size:13px">Chưa có thành viên. Thêm người hay chia tiền cùng (vd: Anh A, Chị B).</div>';return;}
-  el.innerHTML=MEMBERS.map(function(m){
+  var listHtml=MEMBERS.map(function(m){
     return '<div class="acct-row" style="grid-template-columns:1fr auto auto;gap:8px;align-items:center">'+
       '<span>'+(m.active?'':'<span class="muted">(ẩn) </span>')+m.name+'</span>'+
       '<button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="toggleMember(\''+m.id+'\')">'+( m.active?'Ẩn':'Hiện')+'</button>'+
       '<button class="del" onclick="deleteMember(\''+m.id+'\')">✕</button></div>';
   }).join('');
+  el.innerHTML='<button class="btn btn-ghost" style="font-size:12px;padding:4px 12px;margin-bottom:8px" onclick="toggleMembersList()">'+(MEMBERS_COLLAPSED?('▸ Hiện danh sách ('+MEMBERS.length+' người)'):('▾ Thu gọn danh sách ('+MEMBERS.length+' người)'))+'</button>'+
+    '<div style="display:'+(MEMBERS_COLLAPSED?'none':'block')+'">'+listHtml+'</div>';
 }
 function addMember(){
   var inp=document.getElementById('memberName');var name=(inp.value||'').trim();
   if(!name)return;
   if(MEMBERS.find(function(m){return m.name===name;})){alert('Tên "'+name+'" đã có rồi.');return;}
   MEMBERS.push({id:uid(),name:name,active:true});
+  MEMBERS_COLLAPSED=false; // vừa thêm thì mở danh sách cho thấy
   inp.value='';persist();renderMembers();renderSplitDebt();
 }
 function toggleMember(id){var m=memberById(id);if(m){m.active=!m.active;persist();renderMembers();}}
@@ -3479,8 +3556,11 @@ function saveLoan(){
     var modeEl=document.querySelector('input[name="lMode"]:checked');var mode=modeEl?modeEl.value:'now';
     var memberId=ensureMember(borrower);var loanId=uid();var noCash=(mode==='past');
     if(!noCash){
-      var acct=document.getElementById('lAcct').value||DEF_ACCT;
-      TX.push({id:uid(),date:date,desc:(name||borrower)+' — cho vay',amount:amount,cat:'Cho vay',type:'loanout',acct:acct,linkLoan:loanId});
+      var acctRaw=document.getElementById('lAcct').value||DEF_ACCT;
+      var onCard=(acctRaw&&acctRaw.indexOf('card:')===0)?acctRaw.slice(5):null;
+      var ltx={id:uid(),date:date,desc:(name||borrower)+' — cho vay',amount:amount,cat:'Cho vay',type:'loanout',linkLoan:loanId};
+      if(onCard){ltx.card=onCard;ltx.acct="";}else{ltx.acct=acctRaw;}
+      TX.push(ltx);
     }
     LOANS.push({id:loanId,name:name||borrower,borrower:borrower,memberId:memberId,amount:amount,date:date,dueDate:due,noCashOut:noCash,note:note,rate:rate,repayments:[],status:'active'});
   }
@@ -3547,8 +3627,9 @@ function confirmRepayment(loanId){
   if(amt<=0){alert('Số tiền không hợp lệ.');return;}
   if(amt>remain+1&&!confirm('Số tiền ('+fmt(amt)+') lớn hơn dư nợ còn lại ('+fmt(remain)+'). Vẫn ghi?'))return;
   var rec=Math.min(amt,remain);var who=loanWho(l);
-  TX.push({id:uid(),date:date,desc:who+' trả — '+(l.name||'cho vay'),amount:rec,cat:'Thu hồi cho vay',type:'loanback',acct:acct,linkLoan:loanId});
-  l.repayments.push({id:uid(),date:date,amount:rec,acct:acct});
+  var repId=uid();
+  TX.push({id:uid(),date:date,desc:who+' trả — '+(l.name||'cho vay'),amount:rec,cat:'Thu hồi cho vay',type:'loanback',acct:acct,linkLoan:loanId,repayId:repId});
+  l.repayments.push({id:repId,date:date,amount:rec,acct:acct});
   if(loanRemain(l)<=0)l.status='done';
   persist();closeRepayModal();renderReceivables();renderBooks();renderOverview();
 }
@@ -3573,9 +3654,10 @@ function receivablesData(){
   });
   SPLITS.forEach(function(s){
     s.shares.forEach(function(sh){
-      if(sh.memberId==='__me__')return;if(s.settled.indexOf(sh.memberId)>=0)return;if(!(sh.amount>0))return;
+      if(sh.memberId==='__me__')return;if(s.settled.indexOf(sh.memberId)>=0)return;
+      var rem=splitShareRemain(s,sh);if(rem<=0)return;
       var m=memberById(sh.memberId);var b=bucket(sh.memberId,m?m.name:sh.memberId);
-      b.splits.push({split:s,share:sh});b.splitRemain+=sh.amount;
+      b.splits.push({split:s,share:sh,remain:rem});b.splitRemain+=rem;
     });
   });
   var arr=order.map(function(k){return people[k];});
@@ -3625,10 +3707,11 @@ function renderReceivables(){
           '</div>';
         }).join('');
         var splitRows=p.splits.map(function(x){
+          var paid=splitPaidAmt(x.split,x.share.memberId);
           return '<div style="padding:7px 0;border-top:1px solid #f0e9d8;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">'+
-            '<span>✂ <strong>'+x.split.desc+'</strong> <span class="muted" style="font-size:11px">'+(x.split.date?x.split.date.split('-').reverse().join('/'):'')+'</span></span>'+
-            '<span style="display:flex;gap:6px;align-items:center"><span class="down num" style="font-size:13px">'+fmt(x.share.amount)+'</span>'+
-            '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="settleSplit(\''+x.split.id+'\',\''+x.share.memberId+'\')">✓ Đã trả</button></span>'+
+            '<span>✂ <strong>'+x.split.desc+'</strong> <span class="muted" style="font-size:11px">'+(x.split.date?x.split.date.split('-').reverse().join('/'):'')+(paid>0?(' · đã trả '+fmtShort(paid)):'')+'</span></span>'+
+            '<span style="display:flex;gap:6px;align-items:center"><span class="down num" style="font-size:13px">còn '+fmt(x.remain)+'</span>'+
+            '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="settleSplit(\''+x.split.id+'\',\''+x.share.memberId+'\')">✓ Ghi trả</button></span>'+
           '</div>';
         }).join('');
         return '<div class="card" style="padding:14px 16px;margin-bottom:12px'+(p.overdue?';border-color:#e0a89f':'')+'">'+

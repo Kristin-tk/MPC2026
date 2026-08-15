@@ -188,7 +188,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
   <header class="top">
     <div class="brand">
       <h1>Sổ Tài Chính Cá Nhân</h1>
-      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build28</strong></div>
+      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build29</strong></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div id="gdHeaderBtn" style="font-size:12px"></div>
@@ -864,6 +864,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
       <div class="row hide" style="margin-top:12px" id="gdOnWrap">
         <button class="btn btn-primary" style="flex:none" onclick="gdPush()">⬆ Lưu lên Drive</button>
         <button class="btn btn-ghost" style="flex:none" onclick="gdPull()">⬇ Tải từ Drive</button>
+        <button class="btn btn-ghost" style="flex:none" onclick="gdListBackups()">🕑 Khôi phục từ bản sao</button>
         <button class="btn btn-ghost" style="flex:none" onclick="gdSignOut()">Ngắt kết nối</button>
       </div>
 
@@ -3935,10 +3936,16 @@ function gdAfterAuth(silent){
   gdFindFile(function(err,f){
     if(err){document.getElementById('gdStatus').textContent="Lỗi đọc Drive: "+err.message;gdRender();return;}
     if(f){
-      // Luôn tải từ Drive nếu có file — đảm bảo data mới nhất khi mở app máy khác
-      gdPull(silent);
+      var hasLocal=(TX&&TX.length)||(HOLD&&HOLD.length)||(DEBTS&&DEBTS.length);
+      if(hasLocal){
+        // AN TOÀN: máy đã có dữ liệu → KHÔNG tự kéo về đè (tránh mất data chưa kịp đồng bộ).
+        var when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString('vi-VN'):'?';
+        document.getElementById('gdStatus').textContent="Đã kết nối Drive. Máy đang có dữ liệu nên KHÔNG tự tải về (tránh ghi đè). Bản trên Drive cập nhật lúc "+when+" — bấm ⬇ Tải từ Drive nếu muốn dùng bản đó, hoặc ⬆ Lưu lên Drive để đẩy bản máy lên.";
+      }else{
+        // Máy trống (thiết bị mới) → tải về là an toàn
+        gdPull(silent);
+      }
     } else {
-      // Chưa có file trên Drive → đẩy lên lần đầu
       gdPush(true);
       if(!silent)document.getElementById('gdStatus').textContent="Đã kết nối. Đã lưu bản đầu tiên lên Drive.";
     }
@@ -4012,7 +4019,70 @@ function gdPromptPwPull(obj,done){
   if(pw===""){var rec=prompt("Nhập MÃ KHÔI PHỤC:");if(!rec)return;openEnvelope(normRec(rec),obj,'rec').then(function(b){gdAfterPull(obj,b,done);}).catch(function(){alert("Mã khôi phục không đúng.");});return;}
   openEnvelope(pw,obj,'pw').then(function(b){gdAfterPull(obj,b,done);}).catch(function(){alert("Sai mật khẩu hoặc dữ liệu hỏng.");});
 }
-function gdSchedulePush(){if(GD.pushTimer)clearTimeout(GD.pushTimer);GD.pushTimer=setTimeout(function(){gdPush(true);},2500);}
+function gdSchedulePush(){if(GD.pushTimer)clearTimeout(GD.pushTimer);GD.pushTimer=setTimeout(function(){gdPush(true);},1000);}
+// ===== KHÔI PHỤC TỪ BẢN SAO DRIVE (main + 3 bản .bak luân phiên) =====
+function gdListBackups(){
+  gdEnsureToken(false,function(err){
+    if(err){alert("Cần kết nối lại Google Drive trước.");return;}
+    var url='https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc&pageSize=30';
+    fetch(url,{headers:gdHeaders()}).then(function(r){return r.json();}).then(function(d){
+      gdShowBackupModal((d.files||[]));
+    }).catch(function(e){alert("Lỗi đọc Drive: "+e.message);});
+  });
+}
+function gdShowBackupModal(files){
+  var rows=files.length?files.map(function(f){
+    var when=f.modifiedTime?new Date(f.modifiedTime).toLocaleString('vi-VN'):'?';
+    var kb=f.size?(' · '+Math.round(f.size/1024)+' KB'):'';
+    var isMain=/sotaichinh\.json/.test(f.name);
+    return '<div style="padding:9px 0;border-top:1px solid var(--line)">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'+
+        '<div><strong>'+(isMain?'📄 Bản chính':'🗂 '+f.name)+'</strong><div class="muted" style="font-size:11px">Cập nhật: '+when+kb+'</div></div>'+
+        '<div style="display:flex;gap:6px"><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="gdPreviewBackup(\''+f.id+'\')">Xem có gì</button>'+
+        '<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="gdRestoreBackup(\''+f.id+'\',\''+f.name.replace(/'/g,'')+'\')">Khôi phục</button></div>'+
+      '</div>'+
+      '<div id="bakinfo_'+f.id+'" style="font-size:12px;color:var(--ink-soft);margin-top:4px"></div>'+
+    '</div>';
+  }).join(''):'<div class="muted" style="padding:10px 0">Không tìm thấy bản sao nào trên Drive.</div>';
+  var html='<div id="bakModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeBakModal()">'+
+    '<div style="background:var(--card);border-radius:16px;padding:20px;max-width:600px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Khôi phục từ bản sao Drive</h2><button class="btn btn-ghost" style="font-size:12px" onclick="closeBakModal()">Đóng ✕</button></div>'+
+    '<div class="muted" style="font-size:12px;margin:8px 0 6px">App giữ <strong>bản chính</strong> + tối đa <strong>3 bản sao luân phiên</strong>. Bấm <strong>Xem có gì</strong> để đếm số giao dịch &amp; khoảng ngày của từng bản, chọn bản đủ nhất rồi <strong>Khôi phục</strong>.</div>'+
+    rows+
+    '<div class="note" style="margin-top:10px;background:#fbe9e6;border-color:#e0a89f">⚠️ Khôi phục sẽ THAY THẾ sổ hiện tại trên máy. Nếu bản hiện tại đang có gì đó bạn muốn giữ, hãy Sao lưu .json trước.</div>'+
+    '</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function gdBundleInfo(obj){
+  if(isEnvelope(obj)||(obj&&obj.ct))return '🔒 Bản mã hóa — khôi phục xong sẽ hỏi mật khẩu mới xem được.';
+  var tx=(obj&&obj.tx)||[];var n=tx.length;
+  var loans=(obj&&obj.loans)||[];var splits=(obj&&obj.splits)||[];
+  if(!n)return '0 giao dịch'+(loans.length?(' · '+loans.length+' khoản cho vay'):'');
+  var dates=tx.map(function(t){return t.date;}).filter(Boolean).sort();
+  var range=dates.length?(dates[0].split('-').reverse().join('/')+' → '+dates[dates.length-1].split('-').reverse().join('/')):'—';
+  return '<strong>'+n+' giao dịch</strong> · '+range+(loans.length?(' · '+loans.length+' cho vay'):'')+(splits.length?(' · '+splits.length+' chia tiền'):'');
+}
+function gdPreviewBackup(id){
+  var box=document.getElementById('bakinfo_'+id);if(box)box.textContent='Đang đọc…';
+  gdEnsureToken(false,function(err){
+    if(err){if(box)box.textContent='Cần kết nối lại Drive.';return;}
+    fetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media',{headers:gdHeaders()}).then(function(r){return r.json();}).then(function(obj){
+      if(box)box.innerHTML=gdBundleInfo(obj);
+    }).catch(function(e){if(box)box.textContent='Lỗi đọc: '+e.message;});
+  });
+}
+function gdRestoreBackup(id,name){
+  if(!confirm('Khôi phục bản "'+name+'" sẽ THAY THẾ toàn bộ sổ hiện tại trên máy. Tiếp tục?'))return;
+  gdEnsureToken(false,function(err){
+    if(err){alert("Cần kết nối lại Drive.");return;}
+    fetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media',{headers:gdHeaders()}).then(function(r){return r.json();}).then(function(obj){
+      gdApplyDownloaded(obj,function(){gdRenderAll();closeBakModal();alert('Đã khôi phục từ "'+name+'". Kiểm tra lại dữ liệu; nếu đúng thì bấm ⬆ Lưu lên Drive để chốt.');});
+    }).catch(function(e){alert("Lỗi tải bản sao: "+e.message);});
+  });
+}
+function closeBakModal(){var m=document.getElementById('bakModal');if(m)m.remove();}
+// Đẩy nốt lên Drive khi rời trang (nếu bật auto) — cố gắng tốt nhất
+window.addEventListener('beforeunload',function(){if(GD.auto&&GD.token&&GD.pushTimer){try{clearTimeout(GD.pushTimer);gdPush(true);}catch(e){}}});
 function gdToggleAuto(){GD.auto=document.getElementById('gdAuto').checked;gdSaveConf();if(GD.auto&&GD.token){gdPush(true);}gdRender();}
 function gdRenderAll(){
   refreshCatColors();fillAcctSelects();fillInvGroups();fillExpCat();onTypeChange();onExpCatChange();onDebtKindChange();

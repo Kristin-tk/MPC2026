@@ -188,7 +188,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
   <header class="top">
     <div class="brand">
       <h1>Sổ Tài Chính Cá Nhân</h1>
-      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build27</strong></div>
+      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build28</strong></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div id="gdHeaderBtn" style="font-size:12px"></div>
@@ -1064,7 +1064,7 @@ function applyBundle(d){
   if(!invGroups().length){DEFAULT_INV.forEach(function(g){CATEGORIES.push({id:uid(),name:g.name,kind:"dautu",assetClass:g.assetClass,color:g.color,sys:false});});}
   DEF_ACCT=ACCOUNTS[0].id;
   // di trú giao dịch cũ
-  TX.forEach(function(t){if(t.cat==="Thu nhập"){t.cat="Khác (thu)";t.type="thu";}if(!t.type)t.type="chi";if(!t.acct)t.acct=DEF_ACCT;});
+  TX.forEach(function(t){if(t.cat==="Thu nhập"){t.cat="Khác (thu)";t.type="thu";}if(!t.type)t.type="chi";if(t.card)t.acct="";else if(!t.acct)t.acct=DEF_ACCT;});
   // di trú tài sản: gán assetClass + catId
   HOLD.forEach(function(h){
     if(!h.assetClass)h.assetClass=OLD_TYPE_TO_CLASS[h.type]||h.type||"Khác";
@@ -1264,6 +1264,32 @@ function acctName(id){for(var i=0;i<ACCOUNTS.length;i++)if(ACCOUNTS[i].id===id)r
 function txAcctName(t){if(t.card)return "Thẻ: "+debtName(t.card);return acctName(t.acct||"");}
 function acctBalance(id){var a=null;for(var i=0;i<ACCOUNTS.length;i++)if(ACCOUNTS[i].id===id)a=ACCOUNTS[i];var bal=a?(a.opening||0):0;TX.forEach(function(t){if(t.acct!==id)return;if(t.type==="thu"||t.type==="fundout"||t.type==="loanin"||t.type==="loanback")bal+=t.amount;else bal-=t.amount;});return bal;}
 function totalCash(){var s=0;ACCOUNTS.forEach(function(a){s+=acctBalance(a.id);});return s;}
+function txTypeLabel(t){return t.type==='thu'?'Thu nhập':t.type==='loanback'?'Thu hồi cho vay':t.type==='loanin'?'Nhận tiền vay':t.type==='loanout'?'Cho vay':t.type==='debtpay'?'Trả nợ gốc':t.type==='invest'?'Đầu tư':t.type==='fund'?'Nạp quỹ':t.type==='fundout'?'Rút quỹ':'Chi tiêu';}
+// Sao kê 1 tài khoản: mọi giao dịch (mọi loại, mọi tháng) + số dư luỹ kế
+function openAccountStatement(acctId){
+  var a=null;for(var i=0;i<ACCOUNTS.length;i++)if(ACCOUNTS[i].id===acctId)a=ACCOUNTS[i];
+  if(!a)return;
+  var list=TX.filter(function(t){return t.acct===acctId;}).sort(function(x,y){return x.date<y.date?-1:(x.date>y.date?1:0);});
+  var run=a.opening||0;
+  var body='<tr style="border-bottom:1px solid var(--line)"><td colspan="3" style="font-weight:600;padding:5px 6px">Đầu kỳ</td><td class="right num" style="padding:5px 6px">'+fmt(run)+'</td></tr>';
+  body+=list.map(function(t){
+    var sgn=txCashSign(t);run+=sgn*t.amount;
+    return '<tr><td class="num" style="font-size:12px;white-space:nowrap;padding:5px 6px">'+t.date.split('-').reverse().join('/')+'</td>'+
+      '<td style="font-size:12px;padding:5px 6px">'+(t.desc||t.cat||'')+' <span class="muted" style="font-size:10px">· '+txTypeLabel(t)+'</span></td>'+
+      '<td class="right num '+(sgn>0?'up':'down')+'" style="font-size:12px;padding:5px 6px;white-space:nowrap">'+(sgn>0?'+':'−')+fmt(t.amount).replace(' ₫','')+'</td>'+
+      '<td class="right num '+(run<0?'down':'')+'" style="font-size:12px;padding:5px 6px;white-space:nowrap">'+fmt(run).replace(' ₫','')+'</td></tr>';
+  }).join('');
+  var bal=acctBalance(acctId);
+  var html='<div id="stmtModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeAccountStatement()">'+
+    '<div style="background:var(--card);border-radius:16px;padding:20px;max-width:660px;width:100%;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px"><h2 style="margin:0">Sao kê · '+a.name+'</h2><button class="btn btn-ghost" style="font-size:12px;flex:none" onclick="closeAccountStatement()">Đóng ✕</button></div>'+
+    '<div class="muted" style="font-size:12px;margin-bottom:12px">Số dư hiện tại: <strong class="num '+(bal<0?'down':'')+'">'+fmt(bal)+'</strong> · '+list.length+' giao dịch · gồm mọi loại (chi, thu, cho vay, thu hồi, trả nợ, đầu tư…), mọi tháng. Cột cuối là số dư luỹ kế.</div>'+
+    (list.length?('<div style="overflow:auto;flex:1;border:1px solid var(--line);border-radius:10px"><table style="width:100%;font-size:12px"><thead><tr style="position:sticky;top:0;background:var(--card)"><th style="text-align:left;padding:6px">Ngày</th><th style="text-align:left;padding:6px">Nội dung</th><th class="right" style="padding:6px">Vào / Ra</th><th class="right" style="padding:6px">Số dư</th></tr></thead><tbody>'+body+'</tbody></table></div>'):'<div class="muted" style="padding:14px 4px">Chưa có giao dịch nào trên tài khoản này. Số dư = đầu kỳ '+fmt(a.opening||0)+'.</div>')+
+    '<div class="note" style="margin-top:10px">Giao dịch <strong>bằng thẻ tín dụng không xuất hiện ở đây</strong> vì nó ghi vào dư nợ thẻ, không trừ tài khoản này. Nếu thấy số dư âm bất ngờ, xem dòng nào kéo tụt số dư ở cột cuối.</div>'+
+    '</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function closeAccountStatement(){var m=document.getElementById('stmtModal');if(m)m.remove();}
 function acctOptions(sel,withNone,withCards){
   var o=withNone?'<option value="">— Không trừ tài khoản —</option>':'';
   o+=ACCOUNTS.map(function(a){return '<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+a.name+'</option>';}).join("");
@@ -1366,6 +1392,7 @@ function onExpCatChange(){
     if(dd&&dd.hasInterest===false){iw.style.display='none';document.getElementById('dpInterest').value='';}
     else{iw.style.display='';}
     if(dd&&dd.payAcct){var ea=document.getElementById('expAcct');if(ea){for(var oi=0;oi<ea.options.length;oi++){if(ea.options[oi].value===dd.payAcct){ea.value=dd.payAcct;break;}}}}
+    var _dh=document.getElementById('expHint');if(_dh)_dh.innerHTML='Nhập <strong>Tổng tiền trả</strong> rồi bấm Lưu (nếu trả đúng hạn, toàn bộ tính là gốc). Có lãi/phí thì bấm “Tách gốc/lãi” hoặc nhập ô Tiền lãi.';
     return;
   }
   dp.classList.add('hide');if(dpt)dpt.classList.add('hide');
@@ -1402,6 +1429,8 @@ function addExpenseForm(){
     if(!dd){hint.textContent="Khoản nợ không hợp lệ.";return;}
     var princ=parseAmount(document.getElementById('dpPrinc').value)||0;
     var interest=(dd.hasInterest===false)?0:(parseAmount(document.getElementById('dpInterest').value)||0);
+    // Nếu chưa bấm "Tách gốc/lãi" mà đã nhập Tổng tiền trả → coi tổng là gốc (trừ phần lãi đã nhập nếu có)
+    if(princ<=0){var totalV=parseAmount(document.getElementById('dpTotal').value)||0;if(totalV>0)princ=Math.max(0,totalV-interest);}
     var note=document.getElementById('expDesc').value.trim();
     var outNow=debtOutstanding(dd);
     if(princ>outNow){
@@ -1621,7 +1650,7 @@ function renderCatalog(){
     return '<div class="acct-row" style="grid-template-columns:1.3fr 1fr 1fr auto">'+
       '<div><input type="text" class="editcat" value="'+a.name.replace(/"/g,'&quot;')+'" onblur="editAcctName(\''+a.id+'\',this.value)"></div>'+
       '<div class="right"><input type="text" class="editcat num money" style="text-align:right" value="'+groupThousands(String(Math.round(a.opening||0)))+'" onblur="editOpening(\''+a.id+'\',this.value)"></div>'+
-      '<div class="right num h3">'+fmt(bal)+'</div>'+
+      '<div class="right num h3" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Xem sao kê tài khoản" onclick="openAccountStatement(\''+a.id+'\')">'+fmt(bal)+'</div>'+
       '<div class="right"><button class="del" onclick="delAccount(\''+a.id+'\')">Xóa</button></div></div>';
   }).join("");
   // nhóm chi/thu
@@ -3800,7 +3829,7 @@ function renderOverview(){
     var bal=acctBalance(a.id);var diff=(a.actual!=null)?(a.actual-bal):null;
     return '<div class="acct-row"><div><strong>'+a.name+'</strong></div>'+
       '<div class="right num">'+fmtShort(a.opening||0)+'</div>'+
-      '<div class="right num h3">'+fmt(bal)+'</div>'+
+      '<div class="right num h3" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px" title="Xem sao kê tài khoản" onclick="openAccountStatement(\''+a.id+'\')">'+fmt(bal)+'</div>'+
       '<div class="right h4"><input type="text" class="editcat num money" style="text-align:right" placeholder="nhập số dư thật" value="'+(a.actual!=null?fmtShort(a.actual):"")+'" onblur="editActual(\''+a.id+'\',this.value)">'+(diff!=null?'<div class="bstat '+(diff===0?"":"over")+'">'+(diff===0?"khớp ✓":("lệch "+fmt(diff))) +'</div>':'')+'</div>'+
       '<div></div></div>';
   }).join("");

@@ -193,7 +193,7 @@ details[open] summary.formsum .fchev{transform:rotate(90deg)}
   <header class="top">
     <div class="brand">
       <h1>Sổ Tài Chính Cá Nhân</h1>
-      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build31</strong></div>
+      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build32</strong></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div id="gdHeaderBtn" style="font-size:12px"></div>
@@ -1379,8 +1379,8 @@ function fillExpCat(){
   var sel=document.getElementById('expCat');var prev=sel.value;
   var chi=CATEGORIES.filter(function(c){return c.kind==="chi";});
   var inv=invGroups();
-  var html='<optgroup label="Chuyển khoản nội bộ"><option value="xfer">⇄ Chuyển tiền giữa tài khoản</option></optgroup>';
-  html+='<optgroup label="Chi tiêu">'+chi.map(function(c){return '<option value="chi:'+c.id+'">'+c.name+'</option>';}).join("")+'</optgroup>';
+  var html='<optgroup label="Chi tiêu">'+chi.map(function(c){return '<option value="chi:'+c.id+'">'+c.name+'</option>';}).join("")+'</optgroup>';
+  html+='<optgroup label="Chuyển khoản nội bộ"><option value="xfer">⇄ Chuyển tiền giữa tài khoản</option></optgroup>';
   html+='<optgroup label="Đầu tư">'+inv.map(function(c){return '<option value="inv:'+c.id+'">'+c.name+' · '+c.assetClass+'</option>';}).join("")+'</optgroup>';
   if(GOALS.length){html+='<optgroup label="Quỹ mục tiêu">'+GOALS.map(function(go){return '<option value="fund:'+go.id+'">Quỹ: '+go.name+'</option>';}).join("")+'</optgroup>';}
   if(DEBTS.length){html+='<optgroup label="Trả nợ">'+DEBTS.map(function(dd){return '<option value="debt:'+dd.id+'">Trả nợ: '+dd.name+'</option>';}).join("")+'</optgroup>';}
@@ -1802,7 +1802,7 @@ function renderTx(mk,type,wrapId){
       splitBtn='<button class="btn btn-ghost" style="font-size:11px;padding:3px 8px;'+(hasSplit?'color:#3f7a4f;font-weight:600':'')+'" onclick="openSplitDialog(\''+t.id+'\')" title="Chia tiền">'+(hasSplit?'✂ Đã chia':'✂')+'</button> ';
     }
     var inflow=(t.type==="thu"||t.type==="loanin"||t.type==="loanback"||(isXfer&&type==="thu"));
-    var shareNote=(t.linkSplit&&t.type==="chi")?('<div class="muted" style="font-size:10px">của bạn: '+fmt(myShareOf(t)).replace(" ₫","")+'</div>'):'';
+    var _msh=myShareOf(t);var shareNote=(t.type==="chi"&&_msh!==t.amount)?('<div class="muted" style="font-size:10px">của bạn: '+fmt(_msh).replace(" ₫","")+'</div>'):'';
     return '<tr'+(isTransfer?' style="background:rgba(120,90,40,.05)"':'')+'><td>'+dateCell+'</td><td>'+t.desc+'</td><td>'+groupCell+'</td><td>'+acctCell+'</td><td class="right num '+(inflow?"up":"")+'">'+(inflow?"+":"−")+fmt(t.amount).replace(" ₫","")+shareNote+'</td><td class="right">'+splitBtn+'<button class="del" onclick="delTx(\''+t.id+'\')">Xóa</button></td></tr>';
   }).join("");
   wrap.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Ngày</th><th>Mô tả</th><th>Nhóm</th><th>Tài khoản</th><th class="right">Số tiền</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
@@ -2060,7 +2060,7 @@ function netWorth(){return totalAssets()-totalDebt();}
 // 1 giao dịch có phải chi tiêu sinh hoạt thật không (loại nạp quỹ — là chuyển dịch số dư)
 function isLivingExpense(t){return t.type==="chi"&&!t.linkFund&&t.cat!=="Cho vay";}
 // Số tiền của khoản chi được coi là chi tiêu CỦA MÌNH: nếu là hoá đơn chia thì chỉ phần "Tôi"
-function myShareOf(t){if(!t.linkSplit)return t.amount;var sp=splitById(t.linkSplit);if(!sp||!sp.shares)return t.amount;for(var i=0;i<sp.shares.length;i++)if(sp.shares[i].memberId==='__me__')return sp.shares[i].amount;return t.amount;}
+function myShareOf(t){if(t.type!=='chi')return t.amount;var sp=SPLITS.find(function(x){return x.txId===t.id;});if(!sp||!sp.shares)return t.amount;for(var i=0;i<sp.shares.length;i++)if(sp.shares[i].memberId==='__me__')return sp.shares[i].amount;return t.amount;}
 // tổng chi tiêu thật trong 1 tháng
 function spendingSum(mk){var s=0;monthData(mk).forEach(function(t){if(isLivingExpense(t))s+=myShareOf(t);});return s;}
 function prevSpending(mk){var ms=months().slice().sort();var idx=ms.indexOf(mk);if(idx<=0)return null;return spendingSum(ms[idx-1]);}

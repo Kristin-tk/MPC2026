@@ -110,6 +110,11 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
   .bar-chart .bc-bar{width:100%;border-radius:4px 4px 0 0;transition:.2s}.bar-chart .bc-col:hover .bc-bar{opacity:.75}
   .bar-chart .bc-lbl{font-size:9px;color:var(--ink-soft);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
   .bar-chart .bc-val{font-size:9px;color:var(--ink-soft);text-align:center;white-space:nowrap}
+summary.formsum{cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px}
+summary.formsum::-webkit-details-marker{display:none}
+summary.formsum h2{display:inline;margin:0}
+summary.formsum .fchev{display:inline-block;transition:transform .15s;color:var(--ink-soft);font-size:13px;margin-left:2px}
+details[open] summary.formsum .fchev{transform:rotate(90deg)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -188,7 +193,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
   <header class="top">
     <div class="brand">
       <h1>Sổ Tài Chính Cá Nhân</h1>
-      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build30</strong></div>
+      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build31</strong></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div id="gdHeaderBtn" style="font-size:12px"></div>
@@ -475,7 +480,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
     </div>
 
     <div class="card">
-      <h2><span class="dot"></span><span id="debtFormTitle">Thêm khoản vay / thẻ tín dụng</span></h2>
+      <details id="debtFormDetails"><summary class="formsum"><h2><span class="dot"></span><span id="debtFormTitle">Thêm khoản vay / thẻ tín dụng</span></h2><span class="fchev">▸</span></summary>
       <div class="row" style="align-items:flex-end">
         <div style="flex:none"><label>Icon</label><button type="button" class="btn btn-ghost" style="min-width:48px;font-size:18px;padding:10px" onclick="pickNewIcon('debtNewIcon')"><span id="debtNewIcon">🏦</span></button></div>
         <div style="flex:none;min-width:150px"><label>Loại</label>
@@ -517,7 +522,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
         <button class="btn btn-ghost" style="flex:none;display:none" id="debtCancelBtn" onclick="cancelEditDebt()">Hủy</button>
       </div>
       <div class="note" style="margin-top:12px"><strong>Số nợ gốc</strong> với khoản vay là số tiền vay ban đầu; với thẻ tín dụng là <strong>dư nợ hiện tại</strong> (để 0 nếu chưa nợ — dư nợ thẻ tự tăng khi bạn quẹt ở tab Chi tiêu). <strong>Kỳ hạn</strong> &amp; <strong>kiểu trả</strong> chỉ dùng để vẽ <strong>lịch trả dự kiến</strong>, không bắt buộc. Bấm ✎ ở một khoản để sửa lại thông tin.</div>
-    </div>
+    </details></div>
 
   </section>
 
@@ -544,7 +549,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
     </div>
 
     <div class="card">
-      <h2><span class="dot"></span><span id="loanFormTitle">Thêm khoản cho vay</span></h2>
+      <details id="loanFormDetails"><summary class="formsum"><h2><span class="dot"></span><span id="loanFormTitle">Thêm khoản cho vay</span></h2><span class="fchev">▸</span></summary>
       <div class="row" style="align-items:flex-end">
         <div style="flex:2;min-width:160px"><label>Tên khoản / mục đích</label><input id="lName" type="text" placeholder="vd Cho A vay mua xe"></div>
         <div style="flex:2;min-width:140px"><label>Người vay <span style="color:#a23b2d">*</span></label><input id="lBorrower" type="text" list="lBorrowerList" placeholder="vd Anh A, Chị B"><datalist id="lBorrowerList"></datalist></div>
@@ -568,7 +573,7 @@ function gdGisFail(){__gisState.failed=true;if(window.__gdGisFailReal)window.__g
       </div>
       <div id="loanHint" style="font-size:12px;color:var(--ink-soft);margin-top:6px"></div>
       <div class="note" style="margin-top:8px"><strong>Xuất tiền bây giờ</strong>: app ghi 1 khoản tiền ra (không tính chi tiêu sinh hoạt), trừ đúng tài khoản. <strong>Đã xuất từ trước</strong>: chỉ ghi khoản phải thu, <strong>không</strong> tạo giao dịch — dùng cho khoản cho vay có trước khi dùng app.</div>
-    </div>
+    </details></div>
   </section>
 
   <!-- ===== KẾ HOẠCH ===== -->
@@ -1713,16 +1718,16 @@ function renderCatalog(){
 function months(){var set={};TX.forEach(function(t){set[monthKey(t.date)]=1;});var arr=Object.keys(set);[monthKey(todayISO()),CUR_MONTH].forEach(function(m){if(arr.indexOf(m)<0)arr.push(m);});arr.sort().reverse();return arr;}
 function fillMonthPicks(){var ms=months();var opts=ms.map(function(m){return '<option value="'+m+'">'+prettyMonth(m)+'</option>';}).join("");['monthPick','monthPickThu'].forEach(function(id){var s=document.getElementById(id);if(s){s.innerHTML=opts;s.value=CUR_MONTH;}});}
 function monthData(mk){return TX.filter(function(t){return monthKey(t.date)===mk;});}
-function sumType(mk,type){var s=0;monthData(mk).forEach(function(t){if(t.type===type)s+=t.amount;});return s;}
+function sumType(mk,type){var s=0;monthData(mk).forEach(function(t){if(t.type===type){if(type==='thu'&&t.linkSplit)return;s+=t.amount;}});return s;}
 function prevSum(mk,type){var ms=months().slice().sort();var idx=ms.indexOf(mk);if(idx<=0)return null;return sumType(ms[idx-1],type);}
 function deltaBlock(cur,prev,goodWhenDown){if(prev===null)return"";if(prev<=0)return'<div class="d muted">tháng trước chưa có</div>';var dp=(cur-prev)/prev*100;var up=dp>0;var cls=(up===goodWhenDown)?"down":"up";return '<div class="d '+cls+'">'+(up?"▲":"▼")+' '+Math.abs(dp).toFixed(0)+'% so tháng trước</div>';}
 
 function renderStatsChi(mk){
   var d=monthData(mk);var chi=0,thu=0,inv=0,byCat={};
   d.forEach(function(t){
-    if(t.type==="thu"){thu+=t.amount;return;}
+    if(t.type==="thu"){if(t.linkSplit)return;thu+=t.amount;return;}
     if(t.type==="invest"){inv+=t.amount;return;}
-    if(isLivingExpense(t)){chi+=t.amount;byCat[t.cat]=(byCat[t.cat]||0)+t.amount;}
+    if(isLivingExpense(t)){var mv=myShareOf(t);chi+=mv;byCat[t.cat]=(byCat[t.cat]||0)+mv;}
   });
   var netCash=thu-chi-inv;
   document.getElementById('statRow').innerHTML=
@@ -1734,7 +1739,7 @@ function renderStatsChi(mk){
 }
 function renderStatsThu(mk){
   var d=monthData(mk);var thu=0,byCat={},n=0;
-  d.forEach(function(t){if(t.type==="thu"){thu+=t.amount;byCat[t.cat]=(byCat[t.cat]||0)+t.amount;n++;}});
+  d.forEach(function(t){if(t.type==="thu"){if(t.linkSplit)return;thu+=t.amount;byCat[t.cat]=(byCat[t.cat]||0)+t.amount;n++;}});
   var top="—",topV=0;for(var c in byCat)if(byCat[c]>topV){topV=byCat[c];top=c;}
   document.getElementById('statRowThu').innerHTML=
     '<div class="stat"><div class="k">Tổng thu</div><div class="v num up">'+fmt(thu)+'</div>'+deltaBlock(thu,prevSum(mk,"thu"),false)+'</div>'+
@@ -1773,7 +1778,8 @@ function renderTx(mk,type,wrapId){
   if(!d.length){wrap.innerHTML='<div class="empty">'+(f?('Không có khoản '+(type==="thu"?"thu":"chi")+' từ nguồn này trong tháng.'):('Chưa có khoản '+(type==="thu"?"thu":"chi")+' trong tháng này.'))+'</div>';return;}
   var rows=d.map(function(t){
     var isXfer=(t.type==="transfer");
-    var isTransfer=(t.type==="debtpay"||t.type==="loanin"||t.type==="loanout"||t.type==="loanback"||isXfer);
+    var isReimb=(t.type==="thu"&&!!t.linkSplit);
+    var isTransfer=(t.type==="debtpay"||t.type==="loanin"||t.type==="loanout"||t.type==="loanback"||isXfer||isReimb);
     var dateCell='<input type="date" class="editcat" style="width:128px" value="'+t.date+'" onchange="changeDate(\''+t.id+'\',this.value)">';
     var groupCell;
     if(isTransfer){
@@ -1782,6 +1788,7 @@ function renderTx(mk,type,wrapId){
       else if(t.type==="loanin"){lbl="↩ Tiền vay"+(t.linkDebt?(": "+debtName(t.linkDebt)):"");notk="thu nhập";}
       else if(t.type==="loanout"){lbl="↪ Cho vay"+(t.linkLoan?(": "+loanDispName(t.linkLoan)):"");notk="chi tiêu";}
       else if(t.type==="loanback"){lbl="↩ Thu hồi cho vay"+(t.linkLoan?(": "+loanDispName(t.linkLoan)):"");notk="thu nhập";}
+      else if(isReimb){lbl="↩ Thu hồi share"+(t.desc?(": "+t.desc):"");notk="thu nhập";}
       else {lbl=(type==="chi")?("⇄ Chuyển đến "+acctName(t.toAcct)):("⇄ Chuyển từ "+acctName(t.acct));notk="thu/chi";}
       groupCell='<span style="font-size:12px;font-style:italic;color:var(--ink-soft)">'+lbl+' <span style="opacity:.7">(không tính '+notk+')</span></span>';
     }else{
@@ -1795,7 +1802,8 @@ function renderTx(mk,type,wrapId){
       splitBtn='<button class="btn btn-ghost" style="font-size:11px;padding:3px 8px;'+(hasSplit?'color:#3f7a4f;font-weight:600':'')+'" onclick="openSplitDialog(\''+t.id+'\')" title="Chia tiền">'+(hasSplit?'✂ Đã chia':'✂')+'</button> ';
     }
     var inflow=(t.type==="thu"||t.type==="loanin"||t.type==="loanback"||(isXfer&&type==="thu"));
-    return '<tr'+(isTransfer?' style="background:rgba(120,90,40,.05)"':'')+'><td>'+dateCell+'</td><td>'+t.desc+'</td><td>'+groupCell+'</td><td>'+acctCell+'</td><td class="right num '+(inflow?"up":"")+'">'+(inflow?"+":"−")+fmt(t.amount).replace(" ₫","")+'</td><td class="right">'+splitBtn+'<button class="del" onclick="delTx(\''+t.id+'\')">Xóa</button></td></tr>';
+    var shareNote=(t.linkSplit&&t.type==="chi")?('<div class="muted" style="font-size:10px">của bạn: '+fmt(myShareOf(t)).replace(" ₫","")+'</div>'):'';
+    return '<tr'+(isTransfer?' style="background:rgba(120,90,40,.05)"':'')+'><td>'+dateCell+'</td><td>'+t.desc+'</td><td>'+groupCell+'</td><td>'+acctCell+'</td><td class="right num '+(inflow?"up":"")+'">'+(inflow?"+":"−")+fmt(t.amount).replace(" ₫","")+shareNote+'</td><td class="right">'+splitBtn+'<button class="del" onclick="delTx(\''+t.id+'\')">Xóa</button></td></tr>';
   }).join("");
   wrap.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Ngày</th><th>Mô tả</th><th>Nhóm</th><th>Tài khoản</th><th class="right">Số tiền</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
@@ -2051,8 +2059,10 @@ function totalAssets(){var g=groupTotals();var s=0;for(var k in g)s+=g[k];return
 function netWorth(){return totalAssets()-totalDebt();}
 // 1 giao dịch có phải chi tiêu sinh hoạt thật không (loại nạp quỹ — là chuyển dịch số dư)
 function isLivingExpense(t){return t.type==="chi"&&!t.linkFund&&t.cat!=="Cho vay";}
+// Số tiền của khoản chi được coi là chi tiêu CỦA MÌNH: nếu là hoá đơn chia thì chỉ phần "Tôi"
+function myShareOf(t){if(!t.linkSplit)return t.amount;var sp=splitById(t.linkSplit);if(!sp||!sp.shares)return t.amount;for(var i=0;i<sp.shares.length;i++)if(sp.shares[i].memberId==='__me__')return sp.shares[i].amount;return t.amount;}
 // tổng chi tiêu thật trong 1 tháng
-function spendingSum(mk){var s=0;monthData(mk).forEach(function(t){if(isLivingExpense(t))s+=t.amount;});return s;}
+function spendingSum(mk){var s=0;monthData(mk).forEach(function(t){if(isLivingExpense(t))s+=myShareOf(t);});return s;}
 function prevSpending(mk){var ms=months().slice().sort();var idx=ms.indexOf(mk);if(idx<=0)return null;return spendingSum(ms[idx-1]);}
 
 /* ---------- UI NỢ & VAY ---------- */
@@ -2122,7 +2132,7 @@ function resetDebtForm(){
   var dm=document.getElementById('dMethod');if(dm)dm.value="declining";
   var ni=document.getElementById('debtNewIcon');if(ni)ni.textContent="🏦";
 }
-function editDebt(id){
+function editDebt(id){var _dfd=document.getElementById('debtFormDetails');if(_dfd)_dfd.open=true;
   var d=debtById(id);if(!d)return;
   EDIT_DEBT=id;
   document.getElementById('dKind').value=d.kind;
@@ -2317,6 +2327,11 @@ function debtCardHTML(d,full){
       schedHtml='<div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">Thêm <strong>kỳ hạn</strong> (và lãi suất) ở nút ✎ để xem lịch trả dự kiến &amp; mô phỏng trả trước.</div>';
     }
   }
+  var _detailInner=schedHtml+(full?renderDebtPayments(d.id):'');
+  var _open=full&&!!DEBT_OPEN[d.id];
+  var _hasDetail=full&&_detailInner.replace(/\s/g,'')!=='';
+  var _toggle=_hasDetail?('<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;margin-top:8px" onclick="toggleDebtDetail(\''+d.id+'\')">'+(_open?'▾ Thu gọn chi tiết':'▸ Xem chi tiết (lịch trả · lịch sử trả)')+'</button>'):'';
+  var _detailWrap=_hasDetail?('<div id="dd_'+d.id+'" style="display:'+(_open?'block':'none')+';margin-top:6px">'+_detailInner+'</div>'):_detailInner;
   return '<div class="goal" style="margin-bottom:18px">'+
     '<div class="gh"><span>'+(d.icon?d.icon+' ':'')+'<strong>'+d.name+'</strong> <span class="muted" style="font-size:11px">· '+debtKindLabel(d)+rateStr+'</span></span>'+
       '<span class="num '+(cleared?'up':'down')+'" style="display:inline-flex;align-items:center;gap:6px">'+(cleared?'Đã tất toán ✓':('Còn nợ '+fmt(out)))+controls+'</span></div>'+
@@ -2326,8 +2341,7 @@ function debtCardHTML(d,full){
       (interestPaid>0?'<div style="font-size:12px">• Lãi đã trả thực tế: <strong>'+fmt(interestPaid)+'</strong></div>':'')+
       infoHtml+
     '</div>'+
-    schedHtml+
-    (full?renderDebtPayments(d.id):'')+
+    _toggle+_detailWrap+
     '</div>';
 }
 // Tổng quan: card tóm tắt nợ (gọn)
@@ -2339,6 +2353,9 @@ function renderDebts(){
   w.innerHTML=DEBTS.map(function(d){return debtCardHTML(d,false);}).join("");
 }
 // Tab Nợ & vay: đầy đủ + thống kê + form trả nợ
+var DEBT_OPEN={};
+function toggleDebtDetail(id){DEBT_OPEN[id]=!DEBT_OPEN[id];renderDebtTab();}
+function debtExpandAll(open){DEBTS.forEach(function(d){DEBT_OPEN[d.id]=open;});renderDebtTab();}
 function renderDebtTab(){
   var st=document.getElementById('noStat');
   if(st){
@@ -2351,7 +2368,7 @@ function renderDebtTab(){
   }
   var w=document.getElementById('noList');if(!w)return;
   if(!DEBTS.length){w.innerHTML='<div class="empty">Chưa có khoản nợ nào. Dùng form bên dưới để thêm khoản vay hoặc thẻ tín dụng.</div>';}
-  else{w.innerHTML=DEBTS.map(function(d){return debtCardHTML(d,true);}).join("");}
+  else{var _dc='<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="debtExpandAll(true)">Mở hết</button><button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="debtExpandAll(false)">Thu gọn hết</button></div>';w.innerHTML=_dc+DEBTS.map(function(d){return debtCardHTML(d,true);}).join("");}
 }
 function renderDebtPayments(did){
   var pays=TX.filter(function(t){return t.linkDebt===did&&(t.type==="debtpay"||(t.type==="chi"&&t.cat==="Lãi vay"));}).sort(function(a,b){return a.date<b.date?1:-1;});
@@ -2999,8 +3016,8 @@ function lastNMonthKeys(n,completedOnly){
   for(var i=0;i<n;i++){arr.unshift(y+"-"+_pad2(m+1));m--;if(m<0){m=11;y--;}}
   return arr;
 }
-function monthIncome(mk){var s=0;TX.forEach(function(t){if(t.type==='thu'&&monthKey(t.date)===mk)s+=t.amount;});return s;}
-function monthSpend(mk){var s=0;monthData(mk).forEach(function(t){if(isLivingExpense(t))s+=t.amount;});return s;} // = chi tiêu sinh hoạt (loại trả gốc & rót quỹ), khớp tab Chi tiêu
+function monthIncome(mk){var s=0;TX.forEach(function(t){if(t.type==='thu'&&!t.linkSplit&&monthKey(t.date)===mk)s+=t.amount;});return s;}
+function monthSpend(mk){var s=0;monthData(mk).forEach(function(t){if(isLivingExpense(t))s+=myShareOf(t);});return s;} // = chi tiêu sinh hoạt (loại trả gốc & rót quỹ), khớp tab Chi tiêu
 function rangeIncome(mks){var s=0;mks.forEach(function(mk){s+=monthIncome(mk);});return s;}
 function rangeSpend(mks){var s=0;mks.forEach(function(mk){s+=monthSpend(mk);});return s;}
 function monthlyFactor(freq){return freq==='week'?(52/12):(freq==='quarter'?(1/3):(freq==='year'?(1/12):1));}
@@ -3041,7 +3058,7 @@ function analysisPeriodLabel(){
 }
 
 // ---- Section phân tích nâng cao (build15) ----
-function byCatForMonths(mks,capDay){var by={};mks.forEach(function(mk){monthData(mk).forEach(function(t){if(!isLivingExpense(t))return;if(capDay&&parseInt(t.date.slice(8,10))>capDay)return;by[t.cat]=(by[t.cat]||0)+t.amount;});});return by;}
+function byCatForMonths(mks,capDay){var by={};mks.forEach(function(mk){monthData(mk).forEach(function(t){if(!isLivingExpense(t))return;if(capDay&&parseInt(t.date.slice(8,10))>capDay)return;by[t.cat]=(by[t.cat]||0)+myShareOf(t);});});return by;}
 function prevPeriodMonths(mks){var n=mks.length;var first=mks[0];var y=parseInt(first.slice(0,4)),m=parseInt(first.slice(5,7))-1;var out=[];for(var i=0;i<n;i++){m--;if(m<0){m=11;y--;}out.unshift(y+"-"+_pad2(m+1));}return out;}
 function yoyPeriodMonths(mks){return mks.map(function(mk){return (parseInt(mk.slice(0,4))-1)+mk.slice(4);});}
 /* ---- Chế độ so sánh: kỳ liền trước (prev) hay cùng kỳ năm trước (yoy) ---- */
@@ -3641,7 +3658,7 @@ function saveLoan(){
   if(hint)hint.innerHTML='Đã lưu khoản cho vay <strong>'+(name||borrower)+'</strong>.';
   renderReceivables();renderBooks();renderOverview();
 }
-function editLoan(id){
+function editLoan(id){var _lfd=document.getElementById('loanFormDetails');if(_lfd)_lfd.open=true;
   var l=loanById(id);if(!l)return;LOAN_EDIT=id;
   document.getElementById('lName').value=l.name||'';
   document.getElementById('lBorrower').value=loanWho(l);

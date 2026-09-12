@@ -193,7 +193,7 @@ details[open] summary.formsum .fchev{transform:rotate(90deg)}
   <header class="top">
     <div class="brand">
       <h1>Sổ Tài Chính Cá Nhân</h1>
-      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build32</strong></div>
+      <div class="sub">Sổ theo tài khoản · số dư tự khớp · chạy offline, dữ liệu chỉ nằm trên máy bạn · <strong>build33</strong></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div id="gdHeaderBtn" style="font-size:12px"></div>
@@ -292,7 +292,7 @@ details[open] summary.formsum .fchev{transform:rotate(90deg)}
       <h2><span class="dot"></span>Nhập một khoản (có thể là Đầu tư)</h2>
       <div class="row" style="align-items:flex-end">
         <div style="flex:none"><label>Ngày</label><input id="expDate" type="date" style="width:auto"></div>
-        <div style="flex:none;min-width:170px"><label id="expAcctLbl">Trừ từ tài khoản</label><select id="expAcct"></select></div>
+        <div style="flex:none;min-width:170px" id="expAcctWrap"><label id="expAcctLbl">Trừ từ tài khoản</label><select id="expAcct"></select></div>
         <div style="flex:none;min-width:170px" id="expToAcctWrap" class="hide"><label>Đến tài khoản</label><select id="expToAcct"></select></div>
         <div style="flex:none;min-width:200px"><label>Nhóm</label><select id="expCat" onchange="onExpCatChange()"></select></div>
         <div style="flex:2;min-width:150px"><label id="expDescLbl">Mô tả</label><input id="expDesc" type="text" placeholder="vd: đi chợ"></div>
@@ -1384,6 +1384,8 @@ function fillExpCat(){
   html+='<optgroup label="Đầu tư">'+inv.map(function(c){return '<option value="inv:'+c.id+'">'+c.name+' · '+c.assetClass+'</option>';}).join("")+'</optgroup>';
   if(GOALS.length){html+='<optgroup label="Quỹ mục tiêu">'+GOALS.map(function(go){return '<option value="fund:'+go.id+'">Quỹ: '+go.name+'</option>';}).join("")+'</optgroup>';}
   if(DEBTS.length){html+='<optgroup label="Trả nợ">'+DEBTS.map(function(dd){return '<option value="debt:'+dd.id+'">Trả nợ: '+dd.name+'</option>';}).join("")+'</optgroup>';}
+  var _cards=DEBTS.filter(function(dd){return dd.kind==="card";});
+  if(_cards.length){html+='<optgroup label="Giảm nợ thẻ (cashback/hoàn tiền)">'+_cards.map(function(dd){return '<option value="cashback:'+dd.id+'">🎁 Cashback/hoàn tiền: '+dd.name+'</option>';}).join("")+'</optgroup>';}
   sel.innerHTML=html;if(prev)sel.value=prev;
 }
 function onExpCatChange(){
@@ -1397,6 +1399,14 @@ function onExpCatChange(){
   var descLbl=document.getElementById('expDescLbl');
   var toW=document.getElementById('expToAcctWrap');if(toW)toW.classList.add('hide');
   var acctLbl=document.getElementById('expAcctLbl');if(acctLbl)acctLbl.textContent='Trừ từ tài khoản';
+  var acctWrap=document.getElementById('expAcctWrap');if(acctWrap)acctWrap.classList.remove('hide');
+  if(v.indexOf('cashback:')===0){
+    mk.classList.add('hide');sv.classList.add('hide');dp.classList.add('hide');if(dpt)dpt.classList.add('hide');amt.classList.remove('hide');
+    if(toW)toW.classList.add('hide');if(acctWrap)acctWrap.classList.add('hide');
+    descLbl.textContent='Ghi chú (tùy chọn)';
+    var _cbh=document.getElementById('expHint');if(_cbh)_cbh.innerHTML='🎁 Cashback / hoàn tiền sẽ <strong>trừ thẳng dư nợ thẻ</strong> — không rút tài khoản nào, không tính thu/chi. Nhập số tiền cashback tháng này.';
+    return;
+  }
   if(v==='xfer'){
     mk.classList.add('hide');sv.classList.add('hide');dp.classList.add('hide');if(dpt)dpt.classList.add('hide');amt.classList.remove('hide');
     if(toW)toW.classList.remove('hide');if(acctLbl)acctLbl.textContent='Từ tài khoản';
@@ -1456,6 +1466,20 @@ function addExpenseForm(){
     persist();
     hint.innerHTML="Đã chuyển <strong>"+fmt(xamt)+"</strong> từ “"+acctName(acct)+"” → “"+acctName(toAcct)+"”. Không tính vào thu/chi.";
     CUR_MONTH=monthKey(date);renderBooks();renderOverview();return;
+  }
+
+  // ----- nhánh GIẢM NỢ THẺ (cashback/hoàn tiền) -----
+  if(v.indexOf('cashback:')===0){
+    var cbCard=v.slice(9);
+    var cbamt=parseAmount(document.getElementById('expAmt').value);
+    if(cbamt===null||cbamt<=0){hint.textContent="Nhập số tiền cashback/hoàn tiền.";return;}
+    var cbnote=document.getElementById('expDesc').value.trim();
+    TX.push({id:uid(),date:date,desc:cbnote||('Cashback '+debtName(cbCard)),amount:cbamt,type:'cashback',acct:"",linkDebt:cbCard});
+    document.getElementById('expAmt').value="";document.getElementById('expDesc').value="";
+    persist();
+    var _cbd=debtById(cbCard);
+    hint.innerHTML="🎁 Đã ghi cashback <strong>"+fmt(cbamt)+"</strong> — giảm nợ "+debtName(cbCard)+", còn <strong>"+(_cbd?fmt(debtOutstanding(_cbd)):"?")+"</strong>. Không tính thu/chi.";
+    CUR_MONTH=monthKey(date);renderBooks();renderOverview();if(typeof renderDebtTab==='function')renderDebtTab();return;
   }
 
   // ----- nhánh trả nợ -----
@@ -2052,7 +2076,8 @@ function debtPrincipalPaid(did){var s=0;TX.forEach(function(t){if(t.linkDebt===d
 // tổng lãi đã trả (ghi nhận là chi "Lãi vay")
 function debtInterestPaid(did){var s=0;TX.forEach(function(t){if(t.linkDebt===did&&t.type==="chi")s+=t.amount;});return s;}
 // dư nợ còn lại
-function debtOutstanding(d){var base=d.principal||0;if(d.kind==="card")base+=debtCharges(d.id);return Math.max(0,base-debtPrincipalPaid(d.id));}
+function debtCashback(did){var s=0;TX.forEach(function(t){if(t.linkDebt===did&&t.type==="cashback")s+=t.amount;});return s;}
+function debtOutstanding(d){var base=d.principal||0;if(d.kind==="card")base+=debtCharges(d.id);return Math.max(0,base-debtPrincipalPaid(d.id)-debtCashback(d.id));}
 function totalDebt(){var s=0;DEBTS.forEach(function(d){s+=debtOutstanding(d);});return s;}
 // tổng tài sản (tiền mặt + đầu tư/quỹ) — dùng lại groupTotals
 function totalAssets(){var g=groupTotals();var s=0;for(var k in g)s+=g[k];return s;}
@@ -2290,7 +2315,7 @@ function debtCardHTML(d,full){
   var cleared=out<=0;
   var rateStr=(d.hasInterest!==false&&d.rate)?(' · '+d.rate+'%/năm'):'';
   var sub=(d.kind==="card")
-    ? ('Dư nợ = đầu kỳ '+fmtShort(d.principal||0)+' + đã quẹt '+fmtShort(debtCharges(d.id))+' − đã trả '+fmtShort(paid))
+    ? ('Dư nợ = đầu kỳ '+fmtShort(d.principal||0)+' + đã quẹt '+fmtShort(debtCharges(d.id))+' − đã trả '+fmtShort(paid)+(debtCashback(d.id)>0?(' − 🎁cashback '+fmtShort(debtCashback(d.id))):''))
     : ('Gốc vay '+fmtShort(d.principal||0)+' − đã trả gốc '+fmtShort(paid));
   var controls=full?('<button class="del" style="font-size:12px" onclick="pickIcon(\''+d.id+'\',\''+(d.icon||'')+'\')" title="Đổi biểu tượng">🎨</button><button class="del" style="font-size:12px" onclick="editDebt(\''+d.id+'\')" title="Sửa">✎</button><button class="del" style="font-size:12px" onclick="delDebt(\''+d.id+'\')" title="Xóa">✕</button>'):'';
   var schedHtml='';
@@ -2371,12 +2396,12 @@ function renderDebtTab(){
   else{var _dc='<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="debtExpandAll(true)">Mở hết</button><button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="debtExpandAll(false)">Thu gọn hết</button></div>';w.innerHTML=_dc+DEBTS.map(function(d){return debtCardHTML(d,true);}).join("");}
 }
 function renderDebtPayments(did){
-  var pays=TX.filter(function(t){return t.linkDebt===did&&(t.type==="debtpay"||(t.type==="chi"&&t.cat==="Lãi vay"));}).sort(function(a,b){return a.date<b.date?1:-1;});
+  var pays=TX.filter(function(t){return t.linkDebt===did&&(t.type==="debtpay"||t.type==="cashback"||(t.type==="chi"&&t.cat==="Lãi vay"));}).sort(function(a,b){return a.date<b.date?1:-1;});
   if(!pays.length)return '';
   var rows=pays.map(function(t){
-    var isInt=(t.type==="chi");
+    var isInt=(t.type==="chi");var isCb=(t.type==="cashback");
     return '<tr><td class="num" style="font-size:12px">'+t.date+'</td>'+
-      '<td style="font-size:12px">'+(isInt?'Lãi':'Gốc')+'</td>'+
+      '<td style="font-size:12px">'+(isCb?'🎁 Cashback':(isInt?'Lãi':'Gốc'))+'</td>'+
       '<td class="right num" style="font-size:12px">'+fmt(t.amount)+'</td>'+
       '<td class="right"><button class="del" onclick="delTx(\''+t.id+'\')">Xóa</button></td></tr>';
   }).join('');
